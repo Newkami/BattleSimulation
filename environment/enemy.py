@@ -59,6 +59,39 @@ class Jammer():
     def get_current_hp(self):
         return self.HP
 
+    # 定义修复函数
+    def jammer_repaired(self, x_last, y_last, map):
+        if self.isAlive:
+            self.HP = self.HP + self.repair_coef * self.maxHP  # 先加血量
+            if self.isTakingoff:
+                return
+            if self.HP > self.min_takeoff_hp:
+                # 后续需要加上检测位置是否超出地图界限 和地图上是否有其他东西
+                # 如果达到起飞最小耐久，则随机选择飞机出现的位置
+                avail_pos = utils.get_MatrixWithNoObjs(x_last, y_last, map, 2)
+                intend_pos = random.sample(avail_pos, 1)[0]
+                tmp_x = intend_pos[0]
+                tmp_y = intend_pos[1]  # 根据上回合位置所在位置出现的一个上下浮动的随机值
+                self.x_cord = tmp_x
+                self.y_cord = tmp_y
+                self.isTakingoff = True
+            map[self.x_cord][self.y_cord] = Enemy.JAMMER
+
+
+    # 受到无人机攻击
+    def BeAttacked(self, damage, map):
+        if self.isTakingoff and self.isAlive:  # 在起飞状态才可以被攻击
+            self.set_current_hp(self.HP - damage)
+            if self.HP <= 0:
+                self.HP = 0
+                self.isAlive = False
+                self.isTakingoff = False
+            elif self.HP < self.min_takeoff_hp and self.HP > 0:
+                self.isTakingoff = False
+            map[self.x_cord][self.y_cord] = Enemy.EMPTY
+            return self.isAlive, self.target_type
+
+
     # 定义反制函数
     def counter_strike(self, map, multirotors):
         # 既存活又处于起飞状态才可反制
@@ -72,38 +105,8 @@ class Jammer():
             for uav in tmp_uavs:
                 uav.isAlive = False
                 map[uav.x_cord][uav.y_cord] = Enemy.EMPTY
+        self.jammer_repaired(self.x_cord, self.y_cord, map)  # 反制后进入修复函数阶段
         return destroy_num
-
-    # 定义修复函数
-    def jammer_repaired(self, x_last, y_last, map):
-        if self.isAlive:  # 先判断是否存活
-            self.HP = self.HP + self.repair_coef * self.maxHP
-            if self.HP > self.min_takeoff_hp:
-                # 后续需要加上检测位置是否超出地图界限 和地图上是否有其他东西
-                pos_valid = True
-                while pos_valid:
-                    tmp_x = x_last + random.randint(-2, 2)  # 如果达到起飞最小耐久，则随机选择飞机出现的位置
-                    tmp_y = y_last + random.randint(-2, 2)  # 根据上回合位置所在位置出现的一个上下浮动的随机值
-                    if utils.IsInMap(tmp_x, tmp_y, self.mapX, self.mapY):
-                        if map[tmp_x][tmp_y] == 0:
-                            pos_valid = False  # 设定停止循环条件
-                            self.x_cord = tmp_x
-                            self.y_cord = tmp_y
-                self.isTakingoff = True
-                map[self.x_cord][self.y_cord] = Enemy.JAMMER
-
-    # 受到无人机攻击
-    def BeAttacked(self, damage, map):
-        if self.isTakingoff and self.isAlive:  # 在起飞状态才可以被攻击
-            self.set_current_hp(self.HP - damage)
-            if self.HP <= 0:
-                self.HP = 0
-                self.isAlive = False
-                self.isTakingoff = False
-            elif self.HP < self.min_takeoff_hp and self.HP > 0:
-                self.isTakingoff = False
-            map[self.x_cord][self.y_cord] = Enemy.EMPTY
-            return self.isAlive
 
 
 class MissileVehicle:
@@ -179,7 +182,7 @@ class MissileVehicle:
             map[self.x_cord][self.y_cord] = 0
         else:
             self.set_current_hp(self.HP - damage)
-            self.hp_to_strike_ability()
+            self.hp_to_strike_ability()  # 设定击毁架数
         return self.isAlive
 
 
@@ -206,6 +209,13 @@ class Radar:
         return '雷达_id:{0} 所在位置：x:{1}  y:{2} 当前受损程度：{3}% 当前探测范围：{4} 索引id：{5}'. \
             format(self.id, self.x_cord, self.y_cord, self.cal_damage_degree() * 100, self.detect_radius,
                    self.battle_id)
+
+    @property
+    def get_current_hp(self):
+        return self.HP
+
+    def set_current_hp(self, val):
+        self.HP = val
 
     # 计算受损程度
     def cal_damage_degree(self) -> float:
@@ -234,9 +244,8 @@ class Radar:
         # 获取当前探测半径
         return self.get_detect_radius() * (1.0 - self.get_detect_range_decr_degree())
 
-    # 该函数返回的是矩阵点集 获得当前可探测点集[(x1,y1),....(xn,yn)]
     def get_detect_cordination(self):
-        # 获得当前的探测半径
+        # 该函数返回的是矩阵点集 获得当前可探测点集[(x1,y1),....(xn,yn)]
         current_dect_range = self.get_current_detect_radius()
         detect_cords = utils.find_integer_points_in_circle( \
             self.x_cord, self.y_cord, self.mapX, self.mapY, current_dect_range)
@@ -244,6 +253,16 @@ class Radar:
 
     def counter_strike(self, a, b):
         pass
+
+    def BeAttacked(self, damage, map):
+        if self.get_current_hp() - damage <= 0:
+            self.isAlive = False
+            self.set_current_hp(0)
+            map[self.x_cord][self.y_cord] = Enemy.EMPTY
+        else:
+            self.set_current_hp(self.HP - damage)
+            self.hp_to_strike_ability()  # 设定击毁架数
+        return self.isAlive
 
 
 # 防空炮 和雷达配合
@@ -267,6 +286,13 @@ class AntiAircraftTurret:
         return '防空炮台_id:{0} 所在位置：x:{1}  y:{2} 当前是否存活:{3} 当前防卫半径：{4} 当前防卫系数：{5} 索引id：{6}'. \
             format(self.id, self.x_cord, self.y_cord, self.isAlive, self.defend_radius, self.defend_coef,
                    self.battle_id)
+
+    @property
+    def get_current_hp(self):
+        return self.HP
+
+    def set_current_hp(self, val):
+        self.HP = val
 
     def get_defend_radius(self):
         return self.defend_radius
@@ -324,6 +350,16 @@ class AntiAircraftTurret:
     def counter_strike(self, a, b):
         pass
 
+    def BeAttacked(self, damage, map):
+        if self.get_current_hp() - damage <= 0:
+            self.isAlive = False
+            self.set_current_hp(0)
+            map[self.x_cord][self.y_cord] = Enemy.EMPTY
+        else:
+            self.set_current_hp(self.HP - damage)
+
+        return self.isAlive
+
 
 # 指挥所
 class CommandPost:
@@ -345,3 +381,20 @@ class CommandPost:
 
     def counter_strike(self, a, b):
         pass
+
+    @property
+    def get_current_hp(self):
+        return self.HP
+
+    def set_current_hp(self, val):
+        self.HP = val
+
+    def BeAttacked(self, damage, map):
+        if self.get_current_hp() - damage <= 0:
+            self.isAlive = False
+            self.set_current_hp(0)
+            map[self.x_cord][self.y_cord] = Enemy.EMPTY
+        else:
+            self.set_current_hp(self.HP - damage)
+            self.hp_to_strike_ability()  # 设定击毁架数
+        return self.isAlive

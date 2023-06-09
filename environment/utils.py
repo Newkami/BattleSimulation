@@ -55,30 +55,13 @@ def get_MatrixWithNoObjs(x, y, map, n_circle=1) -> list:
         :param mapY:
         :return: 获得以x y为中心的方阵n圈方阵，并且排除了多余的已存在的目标和(x,y)本身
     """
-    square_cords = []
-    for offset in range(1, n_circle + 1):
-        start_x, start_y = x - offset, y - offset
-        for i in range(1, 2 * offset + 1, 1):
-            if IsInMap(start_x, start_y, map.shape[0], map.shape[1]) and map[start_x][start_y] == 0:
-                square_cords.append((start_x, start_y))
-            start_y += 1
 
-        for i in range(1, 2 * offset + 1, 1):
-            if IsInMap(start_x, start_y, map.shape[0], map.shape[1]) and map[start_x][start_y] == 0:
-                square_cords.append((start_x, start_y))
-            start_x += 1
-
-        for i in range(1, 2 * offset + 1, 1):
-            if IsInMap(start_x, start_y, map.shape[0], map.shape[1]) and map[start_x][start_y] == 0:
-                square_cords.append((start_x, start_y))
-            start_y -= 1
-
-        for i in range(1, 2 * offset + 1, 1):
-            if IsInMap(start_x, start_y, map.shape[0], map.shape[1]) and map[start_x][start_y] == 0:
-                square_cords.append((start_x, start_y))
-            start_x -= 1
-
-    return square_cords
+    cords = get_rangeBySpiralMatrix(x, y, map.shape[0], map.shape[1], n_circle)
+    result = []
+    for option in cords:
+        if map[option[0]][option[1]] == 0:
+            result.append(option)
+    return result
 
 
 def getEightPointswithNoobs(x, y, map) -> list:

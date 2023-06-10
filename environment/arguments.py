@@ -5,7 +5,7 @@ import argparse
 def get_env_common_args():
     parser = argparse.ArgumentParser(description="the necessrary params of environments")
 
-    parser.add_argument('--difficulty', type=int, default=2, help='任务难度')  # 0 Easy 1 Medium 2 Difficulty
+    parser.add_argument('--difficulty', type=int, default=2, help='任务难度')  # 0 Easy 1 Medium 2 Difficulty todo:支持自定义难度 可根据用户自定义参数决定个目标类型数量
     parser.add_argument('--n_jammer', type=int, default=2, help='干扰机数量')
     parser.add_argument('--n_missilevehicle', type=int, default=2, help='导弹车数量')
     parser.add_argument('--n_radar', type=int, default=3, help='雷达数量')

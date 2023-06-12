@@ -222,6 +222,7 @@ class BattleEnv(MultiAgentEnv):
         self.max_reward = {
             self.n_enemies * self.reward_death_value + self.reward_win
         }
+        self.destroyed_value = rl_args.destroyed_value
 
         self.n_agents = rl_args.n_agents
         # 在程序执行结束前执行close
@@ -239,6 +240,8 @@ class BattleEnv(MultiAgentEnv):
             map_t[v.x_cord][v.y_cord] = Objective.RADAR
         for v in self.antiAirturrents:
             map_t[v.x_cord][v.y_cord] = Objective.ANTIAIRTURRENT
+        for v in self.multirotors:
+            map_t[v.x_cord][v.y_cord] = Objective.MULTIROTOR
         map_t[self.commandpost.x_cord][self.commandpost.y_cord] = Objective.COMMANDPOST
 
         return map_t
@@ -272,29 +275,22 @@ class BattleEnv(MultiAgentEnv):
 
     def initializeMultirotors(self):
         uav_args = get_multirotor_args()
+        start_idx = 3
         for i in range(self.n_agents):
-            self.multirotors.append(Multirotor(uav_args, 'u' + str(i + 1)))
+            val = Multirotor(uav_args, 'u' + str(i + 1))
+            val.y_cord = 1
+            val.x_cord = start_idx + i
+            self.multirotors.append(val)
 
     def step(self, actions):
         """
             每个时间步 获得action_list
             每架无人机可选择的动作分为移动和攻击
             Returns reward, terminated, info.
-
-            动作空间设计
-            1.移动分为前后左右移动m格， 该设计认为地图信息不可知 需要带探索
-              no-op(供阵亡无人机选择)， 攻击为范围内的目标[1,0,0,1,1,0,0,1,1,0] 1表示范围内的目标可选
-              actions 的 可选动作值
-            0 ：no-op 1-n_enemeis : 攻击
-            2. 动作空间设计为朝九个目标移动， 移动即为朝该目标移动，并且一定能到达， 第十个动作表示朝指挥所移动n个单位
-                攻击为10个可供选择的动作
-
              IDEA 0 留给no-op 1-n_enemies 留给朝除指挥所外的目标直接移动
              IDEA 20 特殊移动 指的是 朝向指挥所移动 但不能一步到达
              IDEA 21-40 指攻击 0-n_enemies
              IDEA 移动指令产生的奖励值可以为移动距离产生的负奖励和距离指挥所的距离的正奖励
-        """
-        """
             思路二：
             每个智能体的动作空间为0：no-op
             和前后左右四个方向的移动：表示一种探索 1 2 3 4
@@ -303,6 +299,7 @@ class BattleEnv(MultiAgentEnv):
                 2.不动 
         """
         rewards = []
+        assert len(actions) == len(self.multirotors), "actions num error!"
         for idx, action in enumerate(actions):
             reward = 0
             assert action in self.get_total_actions(), "action value is invalid!"
@@ -314,6 +311,7 @@ class BattleEnv(MultiAgentEnv):
                 continue
             elif action in [1, 2, 3, 4]:  # todo: 朝前后左右移动
                 agent.execute_move(action, self.g_map)
+                utils.visualizeMapIn2d(self.g_map)
             else:
                 # todo: 攻击指令 封装为一个执行攻击指令的函数
                 target = self.get_target_by_act(action)
@@ -326,10 +324,20 @@ class BattleEnv(MultiAgentEnv):
                     if not alive_st:
                         reward += self.reward_death_value
                 # todo 该处奖励函数的设计方案还需优化
+                utils.visualizeMapIn2d(self.g_map)
             rewards.append(reward)
         print("---------------开启反制阶段-------------------")
         for item in self.target_map:
-            item.counter_strike(self.g_map, self.multirotors)
+            idxs = item.counter_strike(self.g_map, self.multirotors)
+            for idx in idxs:
+                rewards[idx] -= self.destroyed_value
+            utils.visualizeMapIn2d(self.g_map)
+        fi_reward = np.mean(rewards)
+        done, win_tag = self.isDone()
+        # fi_reward -= 5  # 每经过一个回合奖励值降低
+        # if self.args.is_plot:
+        #     utils.visualizeMapIn2d(self.g_map)
+        return fi_reward, done, win_tag
 
     def clearEnv(self):
         self.jammers.clear()
@@ -337,13 +345,6 @@ class BattleEnv(MultiAgentEnv):
         self.radars.clear()
         self.missile_vehicles.clear()
         self.multirotors.clear()
-
-    @classmethod
-    def getState(cls):
-        pass
-
-    def getAllobs(self):
-        pass
 
     def get_agent_by_id(self, id) -> Multirotor:
         assert id > 0 and id <= self.n_agents, "访问id不合法"
@@ -397,3 +398,6 @@ class BattleEnv(MultiAgentEnv):
             actual_damage = (1 - max(dc_list)) * base_damage
 
         return actual_damage
+
+    def isDone(self):
+        return True, True

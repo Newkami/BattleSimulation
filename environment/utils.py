@@ -89,8 +89,8 @@ def getEightPointswithNoobs(x, y, map) -> list:
 
 def visualizeMapIn2d(map):
     # bplt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
-    marker_styles = {1: 's', 2: 'o', 3: '^', 4: 'D', 5: '*'}
-    color_styles = {1: 'blue', 2: 'green', 3: 'aquamarine', 4: 'yellow', 5: 'red'}
+    marker_styles = {1: 's', 2: 'o', 3: '^', 4: 'D', 5: '*', 6: '.'}
+    color_styles = {1: 'blue', 2: 'green', 3: 'aquamarine', 4: 'yellow', 5: 'red', 6: 'darkviolet'}
     # 获取矩阵的行数和列数
     rows, cols = map.shape
     # 创建一个空的图形对象

@@ -12,6 +12,7 @@ def get_env_common_args():
     parser.add_argument('--n_antiAirturrent', type=int, default=2, help='防空炮数量')
     parser.add_argument('--n_commandpost', type=int, default=1, help='指挥所数量')
 
+    parser.add_argument('--is_plot', type=bool, default=True, help='是否画图')
     parser.add_argument('--mapX', type=int, default=50, help='the X of map size')
     parser.add_argument('--mapY', type=int, default=50, help='the Y of map size')
 

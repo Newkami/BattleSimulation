@@ -36,7 +36,8 @@ class TestBattleEnv(unittest.TestCase):
 
     def test_step(self):
         env.reset()
-        actions = [14]
+        actions = [1, 2, 3, 1, 11, 13, 15, 17, 18, 4, 12, 2, 3, 1, 11, 13, 15, 20, 4, 12, 16, 2, 3, 1, 11, 13, 15, 20, 4,
+                   21]
         env.step(actions=actions)
 
     def test_get_base_damage(self):
@@ -66,4 +67,4 @@ class TestMultiRotor(unittest.TestCase):
         uav = Multirotor(uav_args, 1)
         uav.x_cord = 1
         uav.y_cord = 3
-        uav.execute_action(4, map)
+        uav.execute_move(4, map)

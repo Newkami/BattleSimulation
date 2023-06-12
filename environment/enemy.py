@@ -77,7 +77,6 @@ class Jammer():
                 self.isTakingoff = True
             map[self.x_cord][self.y_cord] = Enemy.JAMMER
 
-
     # 受到无人机攻击
     def BeAttacked(self, damage, map):
         if self.isTakingoff and self.isAlive:  # 在起飞状态才可以被攻击
@@ -89,24 +88,23 @@ class Jammer():
             elif self.HP < self.min_takeoff_hp and self.HP > 0:
                 self.isTakingoff = False
             map[self.x_cord][self.y_cord] = Enemy.EMPTY
-            return self.isAlive, self.target_type
-
+        return self.isAlive, self.target_type
 
     # 定义反制函数
     def counter_strike(self, map, multirotors):
         # 既存活又处于起飞状态才可反制
-        destroy_num = 0
         if self.isTakingoff and self.isAlive:
             tmp_uavs = [uav for uav in multirotors if
                         utils.distance_between_objects_in_2d(uav, self) <= self.attack_range]  # 该值需要设定
             tmp_uavs = tmp_uavs if self.jammer_strike_ability >= len(multirotors) \
                 else random.sample(tmp_uavs, self.jammer_strike_ability)  # 如果反制能力超过攻击范围内的无人机数量就直接选所有
-            destroy_num = len(tmp_uavs)  # 设定击落数量
+            # destroy_num = len(tmp_uavs)  # 设定击落数量
             for uav in tmp_uavs:
                 uav.isAlive = False
                 map[uav.x_cord][uav.y_cord] = Enemy.EMPTY
         self.jammer_repaired(self.x_cord, self.y_cord, map)  # 反制后进入修复函数阶段
-        return destroy_num
+        destroyed_idx = [idx for idx in tmp_uavs]
+        return destroyed_idx
 
 
 class MissileVehicle:
@@ -163,7 +161,7 @@ class MissileVehicle:
         return self.strike_ability
 
     def counter_strike(self, map, multirotors):
-        destroy_num = 0
+        # destroy_num = 0
         if self.isAlive:
             tmp_uavs = [uav for uav in multirotors if
                         utils.distance_between_objects_in_2d(uav, self) <= self.attack_range]  # 该值需要设定
@@ -173,7 +171,8 @@ class MissileVehicle:
             for uav in tmp_uavs:
                 uav.isAlive = False
                 map[uav.x_cord][uav.y_cord] = Enemy.EMPTY
-        return destroy_num
+        destroyed_idx = [idx for idx in tmp_uavs]  # 返回被击毁的索引
+        return destroyed_idx
 
     def BeAttacked(self, damage, map):
         if self.get_current_hp() - damage <= 0:

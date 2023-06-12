@@ -16,3 +16,10 @@ class TestTask_Generator(unittest.TestCase):
     def test_for(self):
         for i in range(5, -1, -1):
             print(i)
+
+    def test_get_rangeBySpiralMatrix(self):
+        print(get_rangeBySpiralMatrix(3, 3, 1))
+
+    def test_get_size(self):
+        for i in range(5):
+            print(f'{i}', get_size_by_n(i))

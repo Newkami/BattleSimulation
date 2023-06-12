@@ -18,31 +18,31 @@ def IsInMap(x, y, mapX, mapY):
     return x >= 0 and x <= mapX and y >= 0 and y <= mapY
 
 
-def get_rangeBySpiralMatrix(x, y, mapX, mapY, n_circle):
+def get_rangeBySpiralMatrix(x, y, n_circle, need_center=False):
     # SECTION:通过螺旋矩阵方式获得以x y为中心的方阵 n_circle为圈数
     square_cords = []
-
+    if n_circle == 0:
+        return square_cords
     for offset in range(1, n_circle + 1):
         start_x, start_y = x - offset, y - offset
         for i in range(1, 2 * offset + 1, 1):
-            if IsInMap(start_x, start_y, mapX, mapY):
-                square_cords.append((start_x, start_y))
+            square_cords.append((start_x, start_y))
             start_y += 1
 
         for i in range(1, 2 * offset + 1, 1):
-            if IsInMap(start_x, start_y, mapX, mapY):
-                square_cords.append((start_x, start_y))
+            square_cords.append((start_x, start_y))
             start_x += 1
 
         for i in range(1, 2 * offset + 1, 1):
-            if IsInMap(start_x, start_y, mapX, mapY):
-                square_cords.append((start_x, start_y))
+            square_cords.append((start_x, start_y))
             start_y -= 1
 
         for i in range(1, 2 * offset + 1, 1):
-            if IsInMap(start_x, start_y, mapX, mapY):
-                square_cords.append((start_x, start_y))
+            square_cords.append((start_x, start_y))
             start_x -= 1
+
+    if need_center:  # 如果不需要中心点
+        square_cords.append((x, y))
 
     return square_cords
 
@@ -56,10 +56,10 @@ def get_MatrixWithNoObjs(x, y, map, n_circle=1) -> list:
         :return: 获得以x y为中心的方阵n圈方阵，并且排除了多余的已存在的目标和(x,y)本身
     """
 
-    cords = get_rangeBySpiralMatrix(x, y, map.shape[0], map.shape[1], n_circle)
+    cords = get_rangeBySpiralMatrix(x, y, n_circle)
     result = []
     for option in cords:
-        if map[option[0]][option[1]] == 0:
+        if IsInMap(option[0], option[1], map.shape[0], map.shape[1]) and map[option[0]][option[1]] == 0:
             result.append(option)
     return result
 
@@ -133,3 +133,9 @@ def find_integer_points_in_circle(x, y, mapX, mapY, r):
             if math.sqrt((i - x) ** 2 + (j - y) ** 2) <= r and IsInMap(i, j, mapX, mapY):
                 points.append((i, j))
     return points
+
+
+def get_size_by_n(sight_range):
+    if sight_range == 0:
+        return 0
+    return get_size_by_n(sight_range - 1) + 8 * sight_range

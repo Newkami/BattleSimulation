@@ -36,8 +36,9 @@ class TestBattleEnv(unittest.TestCase):
 
     def test_step(self):
         env.reset()
-        actions = [1, 2, 3, 1, 11, 13, 15, 17, 18, 4, 12, 2, 3, 1, 11, 13, 15, 20, 4, 12, 16, 2, 3, 1, 11, 13, 15, 20, 4,
-                   21]
+        # actions = [1, 2, 3, 1, 11, 13, 15, 17, 18, 4, 12, 2, 3, 1, 11, 13, 15, 20, 4, 12, 16, 2, 3, 1, 11, 13, 15, 20, 4,
+        #           21]
+        actions = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 4, 3]  # 测试移动
         env.step(actions=actions)
 
     def test_get_base_damage(self):
@@ -58,6 +59,13 @@ class TestBattleEnv(unittest.TestCase):
         base_damage = env.get_base_damage(target)
         ac_dmg = env.get_actual_damage(target, base_damage)
         print(ac_dmg)
+
+    def test_get_obs(self):
+        env.reset()
+        obs = env.get_obs()
+        obs = np.array(obs)
+        print(obs)
+        print(obs.shape)
 
 
 class TestMultiRotor(unittest.TestCase):

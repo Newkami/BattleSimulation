@@ -29,7 +29,7 @@ class RolloutWorker:
         terminated = False
         win_tag = False
         step = 0
-        episode_reward = 0  # cumulative rewards
+        episode_reward = 0  # 累积回报
         last_action = np.zeros((self.args.n_agents, self.args.n_actions))
         self.agents.policy.init_hidden(1)
 

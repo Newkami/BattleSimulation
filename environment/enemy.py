@@ -62,7 +62,9 @@ class Jammer():
     # 定义修复函数
     def jammer_repaired(self, x_last, y_last, map):
         if self.isAlive:
-            self.HP = self.HP + self.repair_coef * self.maxHP  # 先加血量
+            tmp_HP = self.HP + self.repair_coef * self.maxHP  # 先加血量
+            self.HP = tmp_HP if tmp_HP < self.HP else self.maxHP
+
             if self.isTakingoff:
                 return
             if self.HP > self.min_takeoff_hp:
@@ -95,15 +97,17 @@ class Jammer():
         # 既存活又处于起飞状态才可反制
         if self.isTakingoff and self.isAlive:
             tmp_uavs = [uav for uav in multirotors if
-                        utils.distance_between_objects_in_2d(uav, self) <= self.attack_range]  # 该值需要设定
-            tmp_uavs = tmp_uavs if self.jammer_strike_ability >= len(multirotors) \
+                        utils.distance_between_objects_in_2d(uav, self) <= self.attack_range]  # attack_range需要设定
+            if len(tmp_uavs) == 0:
+                return [0]
+            tmp_uavs = tmp_uavs if self.jammer_strike_ability >= len(tmp_uavs) \
                 else random.sample(tmp_uavs, self.jammer_strike_ability)  # 如果反制能力超过攻击范围内的无人机数量就直接选所有
             # destroy_num = len(tmp_uavs)  # 设定击落数量
             for uav in tmp_uavs:
                 uav.isAlive = False
                 map[uav.x_cord][uav.y_cord] = Enemy.EMPTY
         self.jammer_repaired(self.x_cord, self.y_cord, map)  # 反制后进入修复函数阶段
-        destroyed_idx = [idx for idx in tmp_uavs]
+        destroyed_idx = [uav.id for uav in tmp_uavs]
         return destroyed_idx
 
 
@@ -165,13 +169,15 @@ class MissileVehicle:
         if self.isAlive:
             tmp_uavs = [uav for uav in multirotors if
                         utils.distance_between_objects_in_2d(uav, self) <= self.attack_range]  # 该值需要设定
-            tmp_uavs = tmp_uavs if self.get_current_strike_ability >= len(multirotors) \
+            if len(tmp_uavs) == 0:
+                return [0]
+            tmp_uavs = tmp_uavs if self.get_current_strike_ability >= len(tmp_uavs) \
                 else random.sample(tmp_uavs, self.get_current_strike_ability)  # 如果反制能力超过攻击范围内的无人机数量就直接选所有
-            destroy_num = len(tmp_uavs)  # 设定击落数量
+
             for uav in tmp_uavs:
                 uav.isAlive = False
                 map[uav.x_cord][uav.y_cord] = Enemy.EMPTY
-        destroyed_idx = [idx for idx in tmp_uavs]  # 返回被击毁的索引
+        destroyed_idx = [uav.id for uav in tmp_uavs]  # 返回被击毁的无人机id
         return destroyed_idx
 
     def BeAttacked(self, damage, map):

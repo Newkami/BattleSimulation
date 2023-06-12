@@ -22,6 +22,14 @@ class Objective(enum.IntEnum):
     MULTIROTOR = 6
 
 
+@unique
+class Direction(enum.IntEnum):
+    FORWARD = 0
+    BACK = 1
+    LEFT = 2
+    RIGHT = 3
+
+
 class Multirotor:
     def __init__(self, args, id):
         self.id = id
@@ -30,7 +38,7 @@ class Multirotor:
         self.y_cord = args.y_cord
         self.isAlive = 1
         self.attack_range = args.attack_range
-        self.detect_range = args.detect_range
+        self.sight_range = args.sight_range
         self.steps = args.steps
         # 攻击范围目标处于该范围能才可以被选择
 
@@ -67,7 +75,6 @@ class Multirotor:
         g_map[self.x_cord][self.y_cord] = Objective.EMPTY
         self.x_cord, self.y_cord = act_x, act_y
         g_map[act_x][act_y] = Objective.MULTIROTOR
-        print(g_map[act_x][act_y])
 
     def execute_attack(self, target, g_map):
         """
@@ -128,6 +135,9 @@ class Multirotor:
             if utils.IsInMap(intend_pos_x, intend_pos_y, mapX, mapY):
                 return intend_pos_x, intend_pos_y
 
+    def get_sight_range(self):
+        return self.sight_range
+
 
 class MultiAgentEnv(object):
     # def step(self, actions):
@@ -142,26 +152,29 @@ class MultiAgentEnv(object):
     #     """Returns observation for agent_id."""
     #     raise NotImplementedError
     #
-    # def get_obs_size(self):
-    #     """Returns the size of the observation."""
-    #     raise NotImplementedError
+    def get_obs_size(self):
+        """Returns the size of the observation."""
+        raise NotImplementedError
+
     #
-    # def get_state(self):
-    #     """Returns the global state."""
-    #     raise NotImplementedError
+    def get_state(self):
+        """Returns the global state."""
+        raise NotImplementedError
+
     #
-    # def get_state_size(self):
-    #     """Returns the size of the global state."""
-    #     raise NotImplementedError
+    def get_state_size(self):
+        """Returns the size of the global state."""
+        raise NotImplementedError
+
     #
-    # def get_avail_actions(self):
-    #     """Returns the available actions of all agents in a list."""
-    #     raise NotImplementedError
-    #
-    # def get_avail_agent_actions(self, agent_id):
-    #     """Returns the available actions for agent_id."""
-    #     raise NotImplementedError
-    #
+    def get_avail_actions(self):
+        """Returns the available actions of all agents in a list."""
+        raise NotImplementedError
+
+    def get_avail_agent_actions(self, agent_id):
+        """Returns the available actions for agent_id."""
+        raise NotImplementedError
+
     def get_total_actions(self):
         """Returns the total number of actions an agent could ever take."""
         raise NotImplementedError
@@ -186,6 +199,7 @@ class MultiAgentEnv(object):
             "n_actions": self.get_total_actions(),
             "n_agents": self.n_agents,
             "episode_limit": self.episode_limit,
+            "n_actions": self.get_total_actions()
         }
         return env_info
 
@@ -201,6 +215,7 @@ class BattleEnv(MultiAgentEnv):
         self.n_antiAirturrent = args.n_antiAirturrent
         self.n_commandpost = args.n_commandpost
         self.n_enemies = self.n_jammer + self.n_radar + self.n_missilevehicle + self.n_antiAirturrent + self.n_commandpost
+        self.n_actions = 1 + 4 + self.n_enemies  # 动作空间大小
         self.jammers = []
         self.missile_vehicles = []
         self.radars = []
@@ -209,6 +224,7 @@ class BattleEnv(MultiAgentEnv):
         self.multirotors = []
         self.target_map = {}
 
+        self.sight_range = args.sight_range  # 无人机视野范围
         # 地图变量
         self.g_map = None
         self.u_map = None  # 无人机所用的map
@@ -250,10 +266,10 @@ class BattleEnv(MultiAgentEnv):
         # 重置环境状态
         self.clearEnv()
         self.initializeEnemy()
-        self.initializeMultirotors()
+        self.initializeMultirotors(self.args.mapX)
         self.g_map = self.generate_map()
-        utils.visualizeMapIn2d(self.g_map)
-        obs = []
+        # utils.visualizeMapIn2d(self.g_map)
+        obs = self.get_obs()
         return obs
 
     """初始化敌军信息"""
@@ -273,13 +289,34 @@ class BattleEnv(MultiAgentEnv):
 
     """初始化无人机集群信息"""
 
-    def initializeMultirotors(self):
+    def initializeMultirotors(self, mapX):
         uav_args = get_multirotor_args()
-        start_idx = 3
+        uav_args.sight_range = self.sight_range
+        start_x = 1
+        end_x = mapX - 25
+        start_y = 0
+        end_y = 3
+        sampled_points = []
+        for x in range(start_x, end_x + 1):
+            for y in range(start_y, end_y + 1):
+                if x <= end_x and y <= end_y:
+                    sampled_points.append((x, y))
+
+        start_x = 0
+        end_x = 3
+        start_y = 3
+        end_y = 25
+        for x in range(start_x, end_x + 1):
+            for y in range(start_y, end_y + 1):
+                if x <= end_x and y <= end_y:
+                    sampled_points.append((x, y))
+
         for i in range(self.n_agents):
             val = Multirotor(uav_args, 'u' + str(i + 1))
-            val.y_cord = 1
-            val.x_cord = start_idx + i
+            tmp = random.sample(sampled_points, k=1)[0]
+            sampled_points.remove(tmp)
+            val.y_cord = tmp[1]
+            val.x_cord = tmp[0]
             self.multirotors.append(val)
 
     def step(self, actions):
@@ -302,16 +339,18 @@ class BattleEnv(MultiAgentEnv):
         assert len(actions) == len(self.multirotors), "actions num error!"
         for idx, action in enumerate(actions):
             reward = 0
-            assert action in self.get_total_actions(), "action value is invalid!"
-            agent = self.get_agent_by_id(idx + 1)
+            assert action in self.get_total_actions_list(), "action value is invalid!"
+            agent = self.get_agent_by_id(idx)
 
             if action == 0:
                 assert agent.isAlive == 0, "no-op is available only for dead uav!"
                 rewards.append(reward)
                 continue
             elif action in [1, 2, 3, 4]:  # todo: 朝前后左右移动
+                # print(agent)
                 agent.execute_move(action, self.g_map)
-                utils.visualizeMapIn2d(self.g_map)
+                # print(agent)
+                # utils.visualizeMapIn2d(self.g_map)
             else:
                 # todo: 攻击指令 封装为一个执行攻击指令的函数
                 target = self.get_target_by_act(action)
@@ -327,11 +366,19 @@ class BattleEnv(MultiAgentEnv):
                 utils.visualizeMapIn2d(self.g_map)
             rewards.append(reward)
         print("---------------开启反制阶段-------------------")
-        for item in self.target_map:
+        for _, item in self.target_map.items():
+            # for uav in self.multirotors:
+            #     print(uav)
+            # utils.visualizeMapIn2d(self.g_map)
             idxs = item.counter_strike(self.g_map, self.multirotors)
+            # utils.visualizeMapIn2d(self.g_map)  #  测试反制是否有效果
+            # for uav in self.multirotors:
+            #    print(uav)
             for idx in idxs:
-                rewards[idx] -= self.destroyed_value
-            utils.visualizeMapIn2d(self.g_map)
+                idx = idx[1:]
+                idx = int(idx)
+                rewards[idx - 1] -= self.destroyed_value
+
         fi_reward = np.mean(rewards)
         done, win_tag = self.isDone()
         # fi_reward -= 5  # 每经过一个回合奖励值降低
@@ -347,10 +394,13 @@ class BattleEnv(MultiAgentEnv):
         self.multirotors.clear()
 
     def get_agent_by_id(self, id) -> Multirotor:
-        assert id > 0 and id <= self.n_agents, "访问id不合法"
-        return self.multirotors[id - 1]
+        assert id >= 0 and id < self.n_agents, "访问id不合法"
+        return self.multirotors[id]
 
     def get_total_actions(self):
+        return 5 + self.n_enemies
+
+    def get_total_actions_list(self):
         """
             两种动作选择方案
             1st: 1+4+n_enemies
@@ -364,7 +414,7 @@ class BattleEnv(MultiAgentEnv):
         """
         total_actions = [0, 1, 2, 3, 4]
         for i in range(self.n_enemies):
-            total_actions.append(11 + i)
+            total_actions.append(5 + i)
         # return self.n_enemies + 5
         return total_actions
 
@@ -401,3 +451,88 @@ class BattleEnv(MultiAgentEnv):
 
     def isDone(self):
         return True, True
+
+    def get_move_reward(self, x, y, target):
+        # 计算移动指令产生的损失和奖励值
+        return 0
+
+    def get_attack_reward(self):
+        # 计算攻击动作产生的奖励值
+        return 0
+
+    # env info
+
+    def get_state_size(self):
+        return self.n_agents + self.n_enemies
+
+    def get_obs_size(self):
+        return utils.get_size_by_n(self.sight_range) + 3
+
+    def get_obs_agent(self, agent_id):
+        """
+        :param agent_id:无人机id
+        :return: 无人机的观测空间
+        """
+        obs = []
+        uav = self.get_agent_by_id(agent_id)
+        # otherwise dead, return all zeros
+        if uav.isAlive:
+            obs.extend([uav.isAlive, uav.x_cord, uav.y_cord])  # 添加存活状态和坐标
+            cords = utils.get_rangeBySpiralMatrix(uav.x_cord, uav.y_cord, uav.sight_range, False)
+            for cord in cords:
+                if not utils.IsInMap(cord[0], cord[1], self.args.mapX, self.args.mapY):
+                    obs.append(-1)
+                else:
+                    obs.append(self.g_map[cord[0]][cord[1]])
+        else:
+            obs = [0] * self.get_obs_size(uav.sight_range)
+        return obs
+
+    def get_obs(self):
+        agents_obs = [self.get_obs_agent(i) for i in range(self.n_agents)]
+        return agents_obs
+
+    def get_state(self):
+        return [1, 2, 3, 4]
+
+    def can_move(self, uav, direction):
+        if direction == Direction.FORWARD:
+            return uav.y_cord != self.args.mapY
+        elif direction == Direction.BACK:
+            return uav.y_cord != 0
+        elif direction == Direction.LEFT:
+            return uav.x_cord != 0
+        else:
+            return uav.x_cord != self.args.mapX
+
+    def get_avail_agent_actions(self, agent_id):
+        """
+            :param agent_id: 智能体id
+            :return: 返回可选择的动作
+        """
+        agent = self.get_agent_by_id(agent_id)
+        if agent.isAlive:
+            avail_actions = [0] * self.n_actions  # 禁止0值被选择
+            if self.can_move(agent, Direction.FORWARD):
+                avail_actions[1] = 1
+            if self.can_move(agent, Direction.BACK):
+                avail_actions[2] = 1
+            if self.can_move(agent, Direction.LEFT):
+                avail_actions[3] = 1
+            if self.can_move(agent, Direction.RIGHT):
+                avail_actions[4] = 1
+            sight_range = agent.get_sight_range()
+            target_items = self.target_map.items()
+            for k, v in target_items:
+                if utils.distance_between_objects_in_2d(agent, v) <= sight_range:
+                    avail_actions[v.battle_id] = 1
+            return avail_actions
+        else:
+            return [1] + [0] * self.n_actions - 1
+
+    def get_avail_actions(self):
+        avail_actions = []
+        for agent_id in range(self.multirotors):
+            avail_agent = self.get_avail_agent_actions(agent_id)
+            avail_actions.append(avail_agent)
+        return avail_actions

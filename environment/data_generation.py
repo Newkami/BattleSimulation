@@ -2,15 +2,18 @@ import pandas as pd
 import numpy as np
 import os
 from environment.enemy import *
+from config import DATA_PATH
 
 
 class Task_Generator:
     def __init__(self):
-        self.jammer_df = pd.read_excel('../../data/Jammer.xlsx')
-        self.missilevehicle_df = pd.read_excel('../../data/MissileVehicle.xlsx')
-        self.radar_df = pd.read_excel('../../data/Radar.xlsx')
-        self.antiAirturrent_df = pd.read_excel('../../data/AntiAircraftTurrent.xlsx')
-        self.commandpost_df = pd.read_excel('../../data/Commandpost.xlsx')
+
+        print()
+        self.jammer_df = pd.read_excel(os.path.join(DATA_PATH, 'Jammer.xlsx'))
+        self.missilevehicle_df = pd.read_excel(os.path.join(DATA_PATH, 'MissileVehicle.xlsx'))
+        self.radar_df = pd.read_excel(os.path.join(DATA_PATH, 'Radar.xlsx'))
+        self.antiAirturrent_df = pd.read_excel(os.path.join(DATA_PATH, 'AntiAircraftTurrent.xlsx'))
+        self.commandpost_df = pd.read_excel(os.path.join(DATA_PATH, 'Commandpost.xlsx'))
 
     def generate_task(self, args):
         assert args.difficulty in [0, 1, 2], "difficulty is invalid"

@@ -9,9 +9,15 @@
 --------**battle_simulation**.py 定义环境交互函数文件  
 --------**enemy**.py 敌军目标类  
 --------**utils**.py 常用函数文件  
-**network** 基本网络实现
-**common** rl训练常用功能包
+network基本网络实现
+common rl训练常用功能包
 policy 具体的RL算法策略实现
+
+
+### quickstart
+```bash
+pip -r install requirement.txt
+```
 
 ### 观测空间
 1. 无人机自身位置 和视野范围内的所有信息，包括敌军目标，和友军无人机

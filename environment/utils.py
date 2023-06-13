@@ -87,7 +87,7 @@ def getEightPointswithNoobs(x, y, map) -> list:
     return result
 
 
-def visualizeMapIn2d(map):
+def visualizeMapIn2d(map, first=False):
     # bplt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
     marker_styles = {1: 's', 2: 'o', 3: '^', 4: 'D', 5: '*', 6: '.'}
     color_styles = {1: 'blue', 2: 'green', 3: 'aquamarine', 4: 'yellow', 5: 'red', 6: 'darkviolet'}
@@ -95,14 +95,18 @@ def visualizeMapIn2d(map):
     rows, cols = map.shape
     # 创建一个空的图形对象
     fig, ax = plt.subplots()
-    # 遍历矩阵，绘制散点图
-    for i in range(rows):
-        for j in range(cols):
-            if map[i, j] != 0:
-                # 绘制非零元素的散点图
-                ax.scatter(j + 0.5, i + 0.5, marker=marker_styles[map[i, j]], c=color_styles[map[i, j]],
-                           s=100)
 
+    # 遍历矩阵，绘制散点图
+    map_points_x, map_points_y = plot_aux(map, len(marker_styles))
+
+
+    ax.clear()
+    scatters = []
+    for i in range(1, len(marker_styles) + 1):
+        scatters.append(ax.scatter(map_points_x[i], map_points_y[i], marker=marker_styles[i], c=color_styles[i], s=50))
+
+    labels = ['干扰机', '导弹车', '雷达', '防空炮', '指挥所', '无人机']
+    ax.legend(scatters, labels, loc="lower right")
     # 设置坐标轴范围和刻度
     ax.set_xlim(0, cols)
     ax.set_ylim(0, rows)
@@ -113,11 +117,40 @@ def visualizeMapIn2d(map):
     ax.set_ylabel('X Coordinate')
     # 隐藏坐标轴刻度线
     ax.tick_params(axis='both', which='both', length=0)
-
     # 显示网格线
     # ax.grid(linewidth=1, color='gray', linestyle='--')
     # 显示图形
     plt.show()
+
+
+def plot_aux(map, length):
+    rows, cols = map.shape
+    map_points_x = {}
+    map_points_y = {}
+    for i in range(length):
+        map_points_x[i + 1] = []
+        map_points_y[i + 1] = []
+    for i in range(rows):
+        for j in range(cols):
+            if map[i, j] == 1:
+                map_points_x[1].append(i)
+                map_points_y[1].append(j)
+            elif map[i, j] == 2:
+                map_points_x[2].append(i)
+                map_points_y[2].append(j)
+            elif map[i, j] == 3:
+                map_points_x[3].append(i)
+                map_points_y[3].append(j)
+            elif map[i, j] == 4:
+                map_points_x[4].append(i)
+                map_points_y[4].append(j)
+            elif map[i, j] == 5:
+                map_points_x[5].append(i)
+                map_points_y[5].append(j)
+            elif map[i, j] == 6:
+                map_points_x[6].append(i)
+                map_points_y[6].append(j)
+    return map_points_x, map_points_y
 
 
 def find_integer_points_in_circle(x, y, mapX, mapY, r):

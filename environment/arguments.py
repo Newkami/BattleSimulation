@@ -5,7 +5,7 @@ import argparse
 def get_env_common_args():
     parser = argparse.ArgumentParser(description="the necessrary params of environments")
 
-    parser.add_argument('--difficulty', type=int, default=2, help='任务难度')  # 0 Easy 1 Medium 2 Difficulty
+    parser.add_argument('--difficulty', type=int, default=3, help='任务难度')  # 0 Easy 1 Medium 2 Hard 3 custom
     parser.add_argument('--n_jammer', type=int, default=2, help='干扰机数量')
     parser.add_argument('--n_missilevehicle', type=int, default=2, help='导弹车数量')
     parser.add_argument('--n_radar', type=int, default=3, help='雷达数量')
@@ -23,19 +23,19 @@ def get_env_common_args():
     parser.add_argument('--min_takeoff_hp', type=int, default=50, help='干扰机最小起飞耐久')
 
     parser.add_argument('--mv_maxHP', type=int, default=100, help='导弹车最大耐久')
-    parser.add_argument('--mv_strike_ability', type=int, default=3, help='导弹车打击能力')  # 5 4 3 fixme:这个值在目前的场景中基本触发不到
-    parser.add_argument('--mv_attack_range', type=float, default=3, help='导弹车打击范围')  # 5 4 3 fixme:这个值在目前的场景中基本触发不到
+    parser.add_argument('--mv_strike_ability', type=int, default=3, help='导弹车打击能力')  # 5 4 3 fixme:这个值在目前的场景中基本触发不到这 这个default值目前是不生效的
+    parser.add_argument('--mv_attack_range', type=float, default=3, help='导弹车打击范围')  # 5 4 3 fixme:这个值在目前的场景中基本触发不到 这个default值目前是不生效的
 
     parser.add_argument('--rd_maxHP', type=int, default=100, help='雷达最大耐久')
-    parser.add_argument('--detect_radius', type=float, default=15, help='雷达探测半径')  # 5 4 3 fixme:这个值在目前的场景中基本触发不到
 
+    parser.add_argument('--detect_radius', type=float, default=15, help='雷达探测半径')  # todo:这个default值目前是不生效的
     parser.add_argument('--aat_maxHP', type=int, default=100, help='防空炮最大耐久')
-    parser.add_argument('--defend_radius', type=float, default=15, help='防空炮防卫半径')  # 8 6 5
-    parser.add_argument('--defend_coef', type=float, default=0.3, help='防空炮防卫系数')  # 0.6 0.4 0.3
+    parser.add_argument('--defend_radius', type=float, default=15, help='防空炮防卫半径')  # todo:这个default值目前是不生效的，
+    parser.add_argument('--defend_coef', type=float, default=0.3, help='防空炮防卫系数')  # todo:这个default值目前是不生效的，
 
     parser.add_argument('--cp_maxHP', type=int, default=100, help='防空炮最大耐久')
 
-    parser.add_argument('--plot', type=bool, default=True)
+    parser.add_argument('--plot', type=bool, default=True)  # 是否开启plot
 
     parser.add_argument('--damage_to_jammer', type=int, default=30, help='无人机对干扰机的百分比伤害')
     parser.add_argument('--damage_to_mv', type=int, default=40, help='无人机对导弹车的百分比伤害')
@@ -43,7 +43,11 @@ def get_env_common_args():
     parser.add_argument('--damage_to_aat', type=int, default=60, help='无人机对防空炮的百分比伤害')
     parser.add_argument('--damage_to_cp', type=int, default=70, help='无人机对指挥所的百分比伤害')
 
-    parser.add_argument('--sight_range', type=int, default=4, help='无人机视野范围') # fixme:这里和无人机的参数重复了
+
+    parser.add_argument('--sight_range', type=int, default=4, help='无人机视野范围')
+    parser.add_argument('--min_destroy_cp_num', type=int, default=3, help='击毁指挥所所需的最少无人机书数量')
+    parser.add_argument('--move_reward_coef', type=float, default=1.5, help='无人机移动的奖励系数')
+    parser.add_argument('--attack_reward_coef', type=float, default=1.2, help='无人机攻击的奖励系数')
     args = parser.parse_args()
     return args
 

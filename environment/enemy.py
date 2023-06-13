@@ -97,9 +97,10 @@ class Jammer():
         # 既存活又处于起飞状态才可反制
         if self.isTakingoff and self.isAlive:
             tmp_uavs = [uav for uav in multirotors if
-                        utils.distance_between_objects_in_2d(uav, self) <= self.attack_range]  # attack_range需要设定
+                        utils.distance_between_objects_in_2d(uav, self) <= self.attack_range and uav.isAlive == True]
+            # attack_range需要设定
             if len(tmp_uavs) == 0:
-                return [0]
+                return None
             tmp_uavs = tmp_uavs if self.jammer_strike_ability >= len(tmp_uavs) \
                 else random.sample(tmp_uavs, self.jammer_strike_ability)  # 如果反制能力超过攻击范围内的无人机数量就直接选所有
             # destroy_num = len(tmp_uavs)  # 设定击落数量
@@ -166,11 +167,14 @@ class MissileVehicle:
 
     def counter_strike(self, map, multirotors):
         # destroy_num = 0
+        global tmp_uavs
         if self.isAlive:
             tmp_uavs = [uav for uav in multirotors if
-                        utils.distance_between_objects_in_2d(uav, self) <= self.attack_range]  # 该值需要设定
+                        utils.distance_between_objects_in_2d(uav, self) <= self.attack_range
+                        and uav.isAlive == True]  # 即可被攻击的无人机仅在攻击范围内并且是存活状态的
+
             if len(tmp_uavs) == 0:
-                return [0]
+                return None
             tmp_uavs = tmp_uavs if self.get_current_strike_ability >= len(tmp_uavs) \
                 else random.sample(tmp_uavs, self.get_current_strike_ability)  # 如果反制能力超过攻击范围内的无人机数量就直接选所有
 
@@ -266,7 +270,6 @@ class Radar:
             map[self.x_cord][self.y_cord] = Enemy.EMPTY
         else:
             self.set_current_hp(self.HP - damage)
-            self.hp_to_strike_ability()  # 设定击毁架数
         return self.isAlive
 
 
@@ -362,7 +365,6 @@ class AntiAircraftTurret:
             map[self.x_cord][self.y_cord] = Enemy.EMPTY
         else:
             self.set_current_hp(self.HP - damage)
-
         return self.isAlive
 
 
@@ -401,5 +403,4 @@ class CommandPost:
             map[self.x_cord][self.y_cord] = Enemy.EMPTY
         else:
             self.set_current_hp(self.HP - damage)
-            self.hp_to_strike_ability()  # 设定击毁架数
         return self.isAlive

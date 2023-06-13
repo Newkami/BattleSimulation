@@ -16,7 +16,8 @@ class Task_Generator:
         self.commandpost_df = pd.read_excel(os.path.join(DATA_PATH, 'Commandpost.xlsx'))
 
     def generate_task(self, args):
-        assert args.difficulty in [0, 1, 2], "difficulty is invalid"
+        assert args.difficulty in [0, 1, 2, 3], \
+            f"difficulty is invalid, invalid value = {args.difficulty}, the avail options are [0,1,2,3]"
         if args.difficulty == 0:
             self.jammer_df = self.jammer_df[self.jammer_df['difficulty'] == 0].sample(args.n_jammer)
             self.missilevehicle_df = self.missilevehicle_df[self.missilevehicle_df['difficulty'] == 0].sample(
@@ -24,6 +25,11 @@ class Task_Generator:
             self.radar_df = self.radar_df[self.radar_df['difficulty'] == 0].sample(args.n_radar)
             self.antiAirturrent_df = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 0].sample(
                 args.n_antiAirturrent)
+            args.mv_strike_ability = 1
+            args.mv_attack_range = 3
+            args.detect_radius = 3
+            args.defend_radius = 4
+            args.defend_coef = 0.3
 
         elif args.difficulty == 1:
             self.jammer_df = self.jammer_df[self.jammer_df['difficulty'] == 1].sample(args.n_jammer)
@@ -33,6 +39,7 @@ class Task_Generator:
             self.antiAirturrent_df = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 1].sample(
                 args.n_antiAirturrent)
             args.mv_strike_ability = 2
+            args.mv_attack_range = 4
             args.detect_radius = 4
             args.defend_radius = 6
             args.defend_coef = 0.4
@@ -45,9 +52,18 @@ class Task_Generator:
             self.antiAirturrent_df = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 2].sample(
                 args.n_antiAirturrent)
             args.mv_strike_ability = 3
+            args.mv_attack_range = 5
             args.detect_radius = 5
             args.defend_radius = 8
             args.defend_coef = 0.6
+
+        else:
+            """
+             支持目标数量的自定义，难度自定义
+             其中mv_strike_ability mv_attack_range detect_radius defend_radius defend_coef使用arguments的默认值
+            """
+            from config import TASK_CONFIG  # 读取配置信息
+            self.custom_task_aux(TASK_CONFIG, args)
 
         # 坐标四舍五入处理 fixme:坐标值其实最好不要出现小数点 那么直接设置为int类型即可
         self.jammer_df['pos_x'] = np.round(self.jammer_df['pos_x'], 0).astype(int)
@@ -88,3 +104,98 @@ class Task_Generator:
         commandpost = CommandPost("CommandPost", args.mapX - 2, args.mapY - 2, idx, args)
         # SECTION:返回四种目标的集合 和一个指挥所
         return jammers, missile_vehicles, radars, antiAirturrents, commandpost
+
+    def custom_task_aux(self, config, args):
+        total_num = config['total_num']
+        jm_num_e = config['jammers']['easy']
+        jm_num_m = config['jammers']['medium']
+        jm_num_h = config['jammers']['hard']
+        jm_num = jm_num_e + jm_num_m + jm_num_h
+        mv_num_e = config['missile_vehicles']['easy']
+        mv_num_m = config['missile_vehicles']['medium']
+        mv_num_h = config['missile_vehicles']['hard']
+        mv_num = mv_num_e + mv_num_m + mv_num_h
+        # 雷达
+        rd_num_e = config['radars']['easy']
+        rd_num_m = config['radars']['medium']
+        rd_num_h = config['radars']['hard']
+        rd_num = rd_num_e + rd_num_m + rd_num_h
+        aat_num_e = config['antiairturrents']['easy']
+        aat_num_m = config['antiairturrents']['medium']
+        aat_num_h = config['antiairturrents']['hard']
+        aat_num = aat_num_e + aat_num_m + aat_num_h
+
+        assert total_num == rd_num + aat_num + mv_num + jm_num, "error total_num is different from other target"
+
+        assert jm_num_e >= 0 and jm_num_e <= 5, "easy jammer num must be in [0-5]"
+        assert jm_num_m >= 0 and jm_num_m <= 3, "medium jammer num must be in [0-3]"
+        assert jm_num_h >= 0 and jm_num_h <= 2, "hard jammer num must be in [0-2]"
+        args.n_jammers = jm_num
+
+        assert mv_num_e >= 0 and mv_num_e <= 10, "easy missilevehicle num must be in [0-10]"
+        assert mv_num_m >= 0 and mv_num_m <= 6, "medium missilevehicle num must be in [0-6]"
+        assert mv_num_h >= 0 and mv_num_h <= 4, "hard missilevehicle num must be in [0-4]"
+        args.n_missilevehicle = mv_num
+
+        assert rd_num_e >= 0 and rd_num_e <= 10, "easy radar num must be in [0-10]"
+        assert rd_num_m >= 0 and rd_num_m <= 6, "medium radar num must be in [0-6]"
+        assert rd_num_h >= 0 and rd_num_h <= 4, "hard radar num must be in [0-4]"
+        args.n_radar = rd_num
+
+        assert aat_num_e >= 0 and aat_num_e <= 10, "easy antiAirturrents num must be in [0-10]"
+        assert aat_num_m >= 0 and aat_num_m <= 6, "medium antiAirturrents num must be in [0-6]"
+        assert aat_num_h >= 0 and aat_num_h <= 4, "hard antiAirturrents num must be in [0-4]"
+        args.n_antiAirturrent = aat_num
+
+        # 生成df
+        # id	HP	pos_x	pos_y	strike_ability	idx_value	difficulty
+        jm_df = pd.DataFrame(columns=["id", "HP", "pos_x", "pos_y", "strike_ability", "idx_value", "difficulty"])
+        if jm_num_e > 0:
+            df_e = self.jammer_df[self.jammer_df['difficulty'] == 0].sample(jm_num_e)
+            jm_df = pd.concat([jm_df, df_e])
+        if jm_num_m > 0:
+            df_m = self.jammer_df[self.jammer_df['difficulty'] == 1].sample(jm_num_m)
+            jm_df = pd.concat([jm_df, df_m])
+        if jm_num_h > 0:
+            df_h = self.jammer_df[self.jammer_df['difficulty'] == 2].sample(jm_num_h)
+            jm_df = pd.concat([jm_df, df_h])
+        self.jammer_df = jm_df
+
+        mv_df = pd.DataFrame(columns=["id", "HP", "pos_x", "pos_y", "strike_army", "idx_value", "difficulty"])
+        if mv_num_e > 0:
+            df_e = self.missilevehicle_df[self.missilevehicle_df['difficulty'] == 0].sample(mv_num_e)
+            mv_df = pd.concat([mv_df, df_e])
+        if mv_num_m > 0:
+            df_m = self.missilevehicle_df[self.missilevehicle_df['difficulty'] == 1].sample(mv_num_m)
+            mv_df = pd.concat([mv_df, df_m])
+        if mv_num_h > 0:
+            df_h = self.missilevehicle_df[self.missilevehicle_df['difficulty'] == 2].sample(mv_num_h)
+            mv_df = pd.concat([mv_df, df_h])
+        self.missilevehicle_df = mv_df
+
+        rd_df = pd.DataFrame(columns=["id", "HP", "pos_x", "pos_y", "detection_radius", "idx_value", "difficulty"])
+        if jm_num_e > 0:
+            df_e = self.radar_df[self.radar_df['difficulty'] == 0].sample(rd_num_e)
+            rd_df = pd.concat([rd_df, df_e])
+        if jm_num_m > 0:
+            df_m = self.radar_df[self.radar_df['difficulty'] == 1].sample(rd_num_m)
+            rd_df = pd.concat([rd_df, df_m])
+        if jm_num_h > 0:
+            df_h = self.radar_df[self.radar_df['difficulty'] == 2].sample(rd_num_h)
+            rd_df = pd.concat([rd_df, df_h])
+        self.radar_df = rd_df
+
+        aat_df = pd.DataFrame(columns=["id", "pos_x", "pos_y", "idx_value", "difficulty"])
+        if aat_num_e > 0:
+            df_e = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 0].sample(aat_num_e)
+            aat_df = pd.concat([aat_df, df_e])
+        if aat_num_m > 0:
+            df_m = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 1].sample(aat_num_m)
+            aat_df = pd.concat([aat_df, df_m])
+        if aat_num_h > 0:
+            df_h = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 2].sample(aat_num_h)
+            aat_df = pd.concat([aat_df, df_h])
+        self.antiAirturrent_df = aat_df
+
+        return True
+        # todo: commandpost 就固定为1吧 没必要产生多个

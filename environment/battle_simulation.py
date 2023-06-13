@@ -85,7 +85,7 @@ class Multirotor:
         distance = utils.distance_between_objects_in_2d(self, target)
         if distance <= self.attack_range:
             can_attack = True
-        elif distance > self.attack_range and distance <= self.detect_range:
+        elif distance > self.attack_range and distance <= self.sight_range:
             options = utils.get_MatrixWithNoObjs(target.x_cord, target.y_cord, g_map, 2)  # 获取两圈更稳健
             assert len(options) != 0, f"({target.x_cord},{target.y_cord})errro in execute_attack: 该点附近没有可选点了"
             intend_pos = random.sample(options, 1)[0]
@@ -216,6 +216,9 @@ class BattleEnv(MultiAgentEnv):
         self.n_commandpost = args.n_commandpost
         self.n_enemies = self.n_jammer + self.n_radar + self.n_missilevehicle + self.n_antiAirturrent + self.n_commandpost
         self.n_actions = 1 + 4 + self.n_enemies  # 动作空间大小
+        self.min_destroy_cp_num = args.min_destroy_cp_num  # 击毁指挥所所需的最少无人机数量
+        self.move_reward_coef = args.move_reward_coef  # 移动产生的奖励系数
+        self.attack_reward_coef = args.attack_reward_coef  # 攻击产生的奖励系数
         self.jammers = []
         self.missile_vehicles = []
         self.radars = []
@@ -223,8 +226,8 @@ class BattleEnv(MultiAgentEnv):
         self.commandpost = []
         self.multirotors = []
         self.target_map = {}
-
         self.sight_range = args.sight_range  # 无人机视野范围
+        self.game_step = 0
         # 地图变量
         self.g_map = None
         self.u_map = None  # 无人机所用的map
@@ -268,7 +271,7 @@ class BattleEnv(MultiAgentEnv):
         self.initializeEnemy()
         self.initializeMultirotors(self.args.mapX)
         self.g_map = self.generate_map()
-        # utils.visualizeMapIn2d(self.g_map)
+        utils.visualizeMapIn2d(self.g_map)
         obs = self.get_obs()
         return obs
 
@@ -335,36 +338,30 @@ class BattleEnv(MultiAgentEnv):
                 1.移动到目标附近位置，并给予一定的负奖励
                 2.不动 
         """
+        self.game_step += 1
         rewards = []
         assert len(actions) == len(self.multirotors), "actions num error!"
         for idx, action in enumerate(actions):
             reward = 0
-            assert action in self.get_total_actions_list(), "action value is invalid!"
+            assert action in self.get_total_actions_list(), f"the invalid action value is -{action}-,the avail options are {self.get_total_actions_list()}"
             agent = self.get_agent_by_id(idx)
 
             if action == 0:
                 assert agent.isAlive == 0, "no-op is available only for dead uav!"
                 rewards.append(reward)
                 continue
-            elif action in [1, 2, 3, 4]:  # todo: 朝前后左右移动
-                # print(agent)
+            elif action in [1, 2, 3, 4]:  # 朝前后左右移动
+                x_last, y_last = agent.x_cord, agent.y_cord
                 agent.execute_move(action, self.g_map)
-                # print(agent)
-                # utils.visualizeMapIn2d(self.g_map)
+                reward = self.get_move_reward(x_last, y_last, agent.x_cord, agent.y_cord, self.commandpost)
+                rewards.append(reward)
             else:
-                # todo: 攻击指令 封装为一个执行攻击指令的函数
                 target = self.get_target_by_act(action)
+                pos_last = (agent.x_cord, agent.y_cord)
                 can_atk = agent.execute_attack(target, self.g_map)
-                if can_atk:
-                    base_damage = self.get_base_damage(target)
-                    actual_damage = self.get_actual_damage(target, base_damage)
-                    alive_st = target.BeAttacked(actual_damage, self.g_map)  # 返回存活状态
-                    reward += actual_damage
-                    if not alive_st:
-                        reward += self.reward_death_value
-                # todo 该处奖励函数的设计方案还需优化
-                utils.visualizeMapIn2d(self.g_map)
-            rewards.append(reward)
+                reward = self.get_attack_reward(can_atk, target, pos_last, (agent.x_cord, agent.y_cord))
+                # utils.visualizeMapIn2d(self.g_map)
+                rewards.append(reward)
         print("---------------开启反制阶段-------------------")
         for _, item in self.target_map.items():
             # for uav in self.multirotors:
@@ -374,16 +371,18 @@ class BattleEnv(MultiAgentEnv):
             # utils.visualizeMapIn2d(self.g_map)  #  测试反制是否有效果
             # for uav in self.multirotors:
             #    print(uav)
-            for idx in idxs:
-                idx = idx[1:]
-                idx = int(idx)
-                rewards[idx - 1] -= self.destroyed_value
+            if isinstance(idxs, list):
+                for idx in idxs:
+                    idx = idx[1:]
+                    idx = int(idx)
+                    rewards[idx - 1] -= self.destroyed_value
 
         fi_reward = np.mean(rewards)
         done, win_tag = self.isDone()
         # fi_reward -= 5  # 每经过一个回合奖励值降低
-        # if self.args.is_plot:
-        #     utils.visualizeMapIn2d(self.g_map)
+        self.print_info_step()
+        if self.args.is_plot:
+            utils.visualizeMapIn2d(self.g_map)
         return fi_reward, done, win_tag
 
     def clearEnv(self):
@@ -392,6 +391,7 @@ class BattleEnv(MultiAgentEnv):
         self.radars.clear()
         self.missile_vehicles.clear()
         self.multirotors.clear()
+        self.game_step = 0
 
     def get_agent_by_id(self, id) -> Multirotor:
         assert id >= 0 and id < self.n_agents, "访问id不合法"
@@ -419,6 +419,7 @@ class BattleEnv(MultiAgentEnv):
         return total_actions
 
     def get_target_by_act(self, act):
+        act = act - 4
         return self.target_map[act]
 
     def get_base_damage(self, target):
@@ -450,15 +451,49 @@ class BattleEnv(MultiAgentEnv):
         return actual_damage
 
     def isDone(self):
-        return True, True
+        # return terminated, wintag
+        terminated = False
+        wintag = False
+        uav_alive = [i for i in self.multirotors if i.isAlive == True]
+        target_alive = [v for _, v in self.target_map.items() if v.isAlive == True]
 
-    def get_move_reward(self, x, y, target):
-        # 计算移动指令产生的损失和奖励值
-        return 0
+        if self.commandpost.isAlive == False:
+            wintag = True
+            terminated = True
+        if len(uav_alive) <= self.min_destroy_cp_num:
+            terminated = True
+        return terminated, wintag
 
-    def get_attack_reward(self):
+    def get_move_reward(self, x_last, y_last, x, y, target: CommandPost):
+        """
+            计算移动产生的损失和奖励
+            与上次位置相比，产生的位移为损失
+            用上次位置和本次位置分别计算和指挥所的距离做差，更近则为正奖励，更远则为负奖励
+        """
+        loss = -utils.distance_between_objects_in_2d((x_last, y_last), (x, y))
+        loss = round(loss / 2, 2)
+        dis_last = utils.distance_between_objects_in_2d((x_last, y_last), (target.x_cord, target.y_cord))
+        dis_now = utils.distance_between_objects_in_2d((x, y), (target.x_cord, target.y_cord))
+        reward = round(dis_last - dis_now, 2) * self.move_reward_coef
+        return loss + reward
+
+    def get_attack_reward(self, can_atk, target, pos_last, pos_now):
         # 计算攻击动作产生的奖励值
-        return 0
+        reward = 0
+        if can_atk:
+            base_damage = self.get_base_damage(target)
+            actual_damage = self.get_actual_damage(target, base_damage)
+            alive_st = target.BeAttacked(actual_damage, self.g_map)  # 返回存活状态
+            reward += actual_damage
+            if target.target_type in [Enemy.JAMMER, Enemy.MISSILEVEHICLE]:  # 若攻击的目标是干扰机或导弹车
+                reward *= self.attack_reward_coef
+            elif target.target_type == Enemy.COMMANDPOST:
+                reward *= self.attack_reward_coef + 0.3  # 如果是指挥所奖励值更多一些
+                if not alive_st:
+                    reward += self.reward_death_value
+        else:  # 如果不能攻击，就产生移动损失
+            reward -= utils.distance_between_objects_in_2d(pos_last, pos_now)
+        return reward
 
     # env info
 
@@ -485,7 +520,7 @@ class BattleEnv(MultiAgentEnv):
                 else:
                     obs.append(self.g_map[cord[0]][cord[1]])
         else:
-            obs = [0] * self.get_obs_size(uav.sight_range)
+            obs = [0] * self.get_obs_size()
         return obs
 
     def get_obs(self):
@@ -493,7 +528,12 @@ class BattleEnv(MultiAgentEnv):
         return agents_obs
 
     def get_state(self):
-        return [1, 2, 3, 4]
+        state = []
+        for i in self.multirotors:
+            state.extend([i.isAlive, i.x_cord, i.y_cord])
+        for i in self.target_map:
+            state.append([i.HP, i.x_cord, i.y_cord])
+        return state
 
     def can_move(self, uav, direction):
         if direction == Direction.FORWARD:
@@ -525,7 +565,7 @@ class BattleEnv(MultiAgentEnv):
             target_items = self.target_map.items()
             for k, v in target_items:
                 if utils.distance_between_objects_in_2d(agent, v) <= sight_range:
-                    avail_actions[v.battle_id] = 1
+                    avail_actions[4 + v.battle_id] = 1
             return avail_actions
         else:
             return [1] + [0] * self.n_actions - 1
@@ -536,3 +576,13 @@ class BattleEnv(MultiAgentEnv):
             avail_agent = self.get_avail_agent_actions(agent_id)
             avail_actions.append(avail_agent)
         return avail_actions
+
+    def print_info_step(self):
+        print(f'-------回合{self.game_step}信息汇总---------')
+        print()
+        print('--------无人机状态信息-----------')
+        for i in self.multirotors:
+            print(i)
+        print('--------敌军目标状态信息-----------')
+        for _, v in self.target_map.items():
+            print(v)

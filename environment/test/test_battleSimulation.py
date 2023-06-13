@@ -1,3 +1,5 @@
+import random
+import time
 import unittest
 
 import numpy as np
@@ -20,8 +22,8 @@ class TestBattleEnv(unittest.TestCase):
 
     def test_reset(self):
         env.reset()
-        for i in env.multirotors:
-            print(i)
+        for k, v in env.target_map.items():
+            print(v)
 
     def test_attacked(self):
         env.reset()
@@ -36,9 +38,8 @@ class TestBattleEnv(unittest.TestCase):
 
     def test_step(self):
         env.reset()
-        # actions = [1, 2, 3, 1, 11, 13, 15, 17, 18, 4, 12, 2, 3, 1, 11, 13, 15, 20, 4, 12, 16, 2, 3, 1, 11, 13, 15, 20, 4,
-        #           21]
-        actions = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 4, 3]  # 测试移动
+        actions = [random.randint(1, 14) for i in range(30)]
+        # actions = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 4, 3]  # 测试移动
         env.step(actions=actions)
 
     def test_get_base_damage(self):
@@ -66,6 +67,13 @@ class TestBattleEnv(unittest.TestCase):
         obs = np.array(obs)
         print(obs)
         print(obs.shape)
+
+    def test_get_move_reward(self):
+        env.reset()
+        agent = env.get_agent_by_id(2)
+        x_last, y_last = agent.x_cord, agent.y_cord
+        agent.execute_move(1, env.g_map)
+        print(env.get_move_reward(x_last, y_last, agent.x_cord, agent.y_cord, env.commandpost))
 
 
 class TestMultiRotor(unittest.TestCase):

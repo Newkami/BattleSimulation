@@ -2,13 +2,13 @@ import random
 import time
 import unittest
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from environment.battle_simulation import BattleEnv, Multirotor
 from environment.arguments import get_env_common_args, get_multirotor_args  # , get_rl_common_args
-from environment.enemy import Jammer
 from common.arguments import get_rl_common_args
-from environment.utils import visualizeMapIn2d
+from environment.utils import visualizeMapIn2d, visualizeMap
 
 args = get_env_common_args()
 rl_args = get_rl_common_args()
@@ -30,7 +30,8 @@ class TestBattleEnv(unittest.TestCase):
         target = env.get_target_by_act(2)
         print(target)
         target.BeAttacked(80, env.g_map)
-        visualizeMapIn2d(env.g_map)
+
+        visualizeMap(env.g_map)
 
     def test_get_agent_by_id(self):
         env.reset()
@@ -84,3 +85,10 @@ class TestMultiRotor(unittest.TestCase):
         uav.x_cord = 1
         uav.y_cord = 3
         uav.execute_move(4, map)
+
+
+class Testlogging(unittest.TestCase):
+    from absl import logging
+    logging.info(
+
+    )

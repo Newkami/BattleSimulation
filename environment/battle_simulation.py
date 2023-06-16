@@ -5,11 +5,11 @@ import random
 
 import numpy as np
 from environment.enemy import *
-from environment.arguments import *
+from absl import logging
+logging.set_verbosity(logging.INFO)
 from environment.data_generation import Task_Generator
 from environment.arguments import get_multirotor_args
-import matplotlib.pyplot as plt
-
+from matplotlib import pyplot as plt
 
 @unique
 class Objective(enum.IntEnum):
@@ -66,7 +66,11 @@ class Multirotor:
         if g_map[act_x][act_y] != 0:  # 说明位置上有其他对象
             options = utils.getEightPointswithNoobs(act_x, act_y, g_map)
             if len(options) == 0:
-                print(f"({act_x},{act_y})该点附近没有可选点了")
+                logging.info(
+                    "warn in execute_move ({},{}),该点附近没有可选点了".format(
+                        act_x,
+                        act_y, )
+                )
                 return
             option = random.sample(options, 1)[0]
             act_x, act_y = option[0], option[1]
@@ -93,7 +97,6 @@ class Multirotor:
             g_map[self.x_cord][self.y_cord] = Objective.EMPTY
             self.x_cord, self.y_cord = act_x, act_y
             g_map[act_x][act_y] = Objective.MULTIROTOR
-            print(g_map[act_x][act_y])
         else:
             # 超过detect_range的目标打算通过无效动作mask来遮蔽住
             pass
@@ -199,7 +202,6 @@ class MultiAgentEnv(object):
             "n_actions": self.get_total_actions(),
             "n_agents": self.n_agents,
             "episode_limit": self.episode_limit,
-            "n_actions": self.get_total_actions()
         }
         return env_info
 
@@ -227,7 +229,6 @@ class BattleEnv(MultiAgentEnv):
         self.multirotors = []
         self.target_map = {}
         self.sight_range = args.sight_range  # 无人机视野范围
-        self.game_step = 0
         # 地图变量
         self.g_map = None
         self.u_map = None  # 无人机所用的map
@@ -237,7 +238,7 @@ class BattleEnv(MultiAgentEnv):
         self.reward_death_value = rl_args.reward_death_value
         self.reward_win = rl_args.reward_win
         self.episode_limit = rl_args.episode_limit
-        self.step_mul = rl_args.step_mul
+        # self.step_mul = rl_args.step_mul
         self.max_reward = {
             self.n_enemies * self.reward_death_value + self.reward_win
         }
@@ -248,6 +249,11 @@ class BattleEnv(MultiAgentEnv):
         # atexit.register(lambda: self.close())
         # self.map = None
 
+        # private var
+        self._total_steps = 0
+        self._episode_steps = 0
+
+        self.is_plot = args.is_plot
     # 生成作战地图
     def generate_map(self):
         map_t = np.zeros(shape=(self.args.mapX, self.args.mapY))
@@ -271,8 +277,9 @@ class BattleEnv(MultiAgentEnv):
         self.initializeEnemy()
         self.initializeMultirotors(self.args.mapX)
         self.g_map = self.generate_map()
-        utils.visualizeMapIn2d(self.g_map)
+        # utils.visualizeMapIn2d(self.g_map)
         obs = self.get_obs()
+        self._episode_steps = 0
         return obs
 
     """初始化敌军信息"""
@@ -338,7 +345,8 @@ class BattleEnv(MultiAgentEnv):
                 1.移动到目标附近位置，并给予一定的负奖励
                 2.不动 
         """
-        self.game_step += 1
+        self._total_steps += 1
+        self._episode_steps += 1
         rewards = []
         assert len(actions) == len(self.multirotors), "actions num error!"
         for idx, action in enumerate(actions):
@@ -362,7 +370,7 @@ class BattleEnv(MultiAgentEnv):
                 reward = self.get_attack_reward(can_atk, target, pos_last, (agent.x_cord, agent.y_cord))
                 # utils.visualizeMapIn2d(self.g_map)
                 rewards.append(reward)
-        print("---------------开启反制阶段-------------------")
+        # print("---------------开启反制阶段-------------------")
         for _, item in self.target_map.items():
             # for uav in self.multirotors:
             #     print(uav)
@@ -372,18 +380,35 @@ class BattleEnv(MultiAgentEnv):
             # for uav in self.multirotors:
             #    print(uav)
             if isinstance(idxs, list):
-                for idx in idxs:
-                    idx = idx[1:]
-                    idx = int(idx)
-                    rewards[idx - 1] -= self.destroyed_value
+                if len(idxs) > 0:
+                    for idx in idxs:
+                        idx = idx[1:]
+                        idx = int(idx)
+                        rewards[idx - 1] -= self.destroyed_value
 
         fi_reward = np.mean(rewards)
-        done, win_tag = self.isDone()
+        terminated, win_tag = self.isDone()
+        if win_tag:
+            fi_reward += self.reward_win
         # fi_reward -= 5  # 每经过一个回合奖励值降低
-        self.print_info_step()
-        if self.args.is_plot:
-            utils.visualizeMapIn2d(self.g_map)
-        return fi_reward, done, win_tag
+        info = {"battle_won": win_tag}
+
+        # count units that are still alive
+        dead_allies, dead_enemies = 0, 0
+        for i in self.multirotors:
+            if i.isAlive == 0:
+                dead_allies += 1
+        for i, v in self.target_map.items():
+            if v.isAlive == 0:
+                dead_enemies += 1
+
+        info["dead_allies"] = dead_allies
+        info["dead_enemies"] = dead_enemies
+        if self._episode_steps >= self.episode_limit:
+            fi_reward -= self.args.exceed_episode_limit_reward
+        # self.print_info_step()
+
+        return fi_reward, terminated, info
 
     def clearEnv(self):
         self.jammers.clear()
@@ -391,7 +416,6 @@ class BattleEnv(MultiAgentEnv):
         self.radars.clear()
         self.missile_vehicles.clear()
         self.multirotors.clear()
-        self.game_step = 0
 
     def get_agent_by_id(self, id) -> Multirotor:
         assert id >= 0 and id < self.n_agents, "访问id不合法"
@@ -498,7 +522,7 @@ class BattleEnv(MultiAgentEnv):
     # env info
 
     def get_state_size(self):
-        return self.n_agents + self.n_enemies
+        return self.n_agents * 3 + self.n_enemies * 4
 
     def get_obs_size(self):
         return utils.get_size_by_n(self.sight_range) + 3
@@ -531,8 +555,8 @@ class BattleEnv(MultiAgentEnv):
         state = []
         for i in self.multirotors:
             state.extend([i.isAlive, i.x_cord, i.y_cord])
-        for i in self.target_map:
-            state.append([i.HP, i.x_cord, i.y_cord])
+        for _, i in self.target_map.items():
+            state.extend([i.HP, i.isAlive, i.x_cord, i.y_cord])
         return state
 
     def can_move(self, uav, direction):
@@ -568,7 +592,7 @@ class BattleEnv(MultiAgentEnv):
                     avail_actions[4 + v.battle_id] = 1
             return avail_actions
         else:
-            return [1] + [0] * self.n_actions - 1
+            return [1] + [0] * (self.n_actions - 1)
 
     def get_avail_actions(self):
         avail_actions = []
@@ -578,7 +602,7 @@ class BattleEnv(MultiAgentEnv):
         return avail_actions
 
     def print_info_step(self):
-        print(f'-------回合{self.game_step}信息汇总---------')
+        print(f'-------回合{self._episode_steps}信息汇总---------')
         print()
         print('--------无人机状态信息-----------')
         for i in self.multirotors:
@@ -586,3 +610,19 @@ class BattleEnv(MultiAgentEnv):
         print('--------敌军目标状态信息-----------')
         for _, v in self.target_map.items():
             print(v)
+
+    def get_env_info(self):
+        difficulty = {
+            0: 'easy',
+            1: 'medium',
+            2: 'hard',
+            3: 'custom'
+        }
+        env_info = super().get_env_info()
+        env_info["difficulty"] = difficulty[self.args.difficulty]
+        env_info["map"] = f"x_{self.args.mapX}_y_{self.args.mapY}_" + env_info["difficulty"]
+        return env_info
+
+    def close(self):
+        self.clearEnv()
+        exit(0)

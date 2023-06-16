@@ -2,6 +2,8 @@ import numpy as np
 import torch
 from torch.distributions import one_hot_categorical
 import time
+from matplotlib import pyplot as plt
+from environment.utils import visualizeMap
 
 
 class RolloutWorker:
@@ -26,6 +28,8 @@ class RolloutWorker:
             self.env.close()
         o, u, r, s, avail_u, u_onehot, terminate, padded = [], [], [], [], [], [], [], []
         self.env.reset()
+        if self.args.is_plot:
+            fig, ax = plt.subplots()
         terminated = False
         win_tag = False
         step = 0
@@ -68,7 +72,8 @@ class RolloutWorker:
                 actions_onehot.append(action_onehot)
                 avail_actions.append(avail_action)
                 last_action[agent_id] = action_onehot
-
+            if self.args.is_plot:
+                visualizeMap(self.env.g_map, fig, ax)
             reward, terminated, info = self.env.step(actions)
             win_tag = True if terminated and 'battle_won' in info and info['battle_won'] else False
             o.append(obs)
@@ -83,6 +88,8 @@ class RolloutWorker:
             step += 1
             if self.args.epsilon_anneal_scale == 'step':
                 epsilon = epsilon - self.anneal_epsilon if epsilon > self.min_epsilon else epsilon
+        plt.show()
+        plt.close()
         # last obs
         obs = self.env.get_obs()
         state = self.env.get_state()
@@ -159,6 +166,8 @@ class CommRolloutWorker:
 
     @torch.no_grad()
     def generate_episode(self, episode_num=None, evaluate=False):
+        if self.args.is_plot:
+            fig, ax = plt.subplots()
         if self.args.replay_dir != '' and evaluate and episode_num == 0:  # prepare for save replay
             self.env.close()
         o, u, r, s, avail_u, u_onehot, terminate, padded = [], [], [], [], [], [], [], []
@@ -193,7 +202,8 @@ class CommRolloutWorker:
                 actions_onehot.append(action_onehot)
                 avail_actions.append(avail_action)
                 last_action[agent_id] = action_onehot
-
+            if self.args.is_plot:
+                visualizeMap(self.env.g_map, fig, ax)
             reward, terminated, info = self.env.step(actions)
             win_tag = True if terminated and 'battle_won' in info and info['battle_won'] else False
             o.append(obs)
@@ -211,6 +221,8 @@ class CommRolloutWorker:
             if self.args.epsilon_anneal_scale == 'step':
                 epsilon = epsilon - self.anneal_epsilon if epsilon > self.min_epsilon else epsilon
         # last obs
+        plt.show()
+        plt.close()
         obs = self.env.get_obs()
         state = self.env.get_state()
         o.append(obs)

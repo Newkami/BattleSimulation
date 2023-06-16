@@ -5,7 +5,7 @@ from common.arguments import get_rl_common_args, get_coma_args, get_mixer_args, 
     get_commnet_args, get_g2anet_args
 
 if __name__ == '__main__':
-    for i in range(8):
+    for i in range(4):
         env_args = get_env_common_args()
         rl_args = get_rl_common_args()
         if rl_args.alg.find('coma') > -1:
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         rl_args.state_shape = env_info["state_shape"]
         rl_args.obs_shape = env_info["obs_shape"]
         rl_args.episode_limit = env_info["episode_limit"]
-        rl_args.map = f"x_{env_args.mapX}_y_{env_args.mapY}"
+        rl_args.map = env_info["map"]
         runner = Runner(env, rl_args)
         if not rl_args.evaluate:
             runner.run(i)

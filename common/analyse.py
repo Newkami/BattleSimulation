@@ -4,17 +4,17 @@ import matplotlib.pyplot as plt
 
 def plt_win_rate_mean():
     path = []
-    alg_num = 8
+    alg_num = 3
     win_rates = [[] for _ in range(alg_num)]
-    game_map = '2s3z'
-    path.append('../result/vdn/' + game_map)
-    path.append('../result/qmix/' + game_map)
-    path.append('../result/qtran_base/' + game_map)
-    path.append('../result/qtran_alt/' + game_map)
+    game_map = '50*50'
+    #path.append('../result/vdn/' + game_map)
+    #path.append('../result/qmix/' + game_map)
+    #path.append('../result/qtran_base/' + game_map)
+    #path.append('../result/qtran_alt/' + game_map)
     path.append('../result/coma/' + game_map)
     path.append('../result/central_v+commnet/' + game_map)
     path.append('../result/central_v+g2anet/' + game_map)
-    path.append('../result/maven/' + game_map)
+    #path.append('../result/maven/' + game_map)
     num_run = 8
     for i in range(alg_num):
         for j in range(num_run):

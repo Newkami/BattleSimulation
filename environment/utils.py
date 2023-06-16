@@ -1,9 +1,12 @@
 import math
+import os
+
 import matplotlib
 
 matplotlib.rc("font", family=' SimHei')
 import matplotlib.pyplot as plt
 import numpy as np
+from config import DATA_PATH
 
 
 def distance_between_objects_in_2d(obj1, obj2):
@@ -15,7 +18,7 @@ def distance_between_objects_in_2d(obj1, obj2):
 
 
 def IsInMap(x, y, mapX, mapY):
-    return x >= 0 and x <= mapX and y >= 0 and y <= mapY
+    return x >= 0 and x < mapX and y >= 0 and y < mapY
 
 
 def get_rangeBySpiralMatrix(x, y, n_circle, need_center=False):
@@ -99,12 +102,13 @@ def visualizeMapIn2d(map, first=False):
     # 遍历矩阵，绘制散点图
     map_points_x, map_points_y = plot_aux(map, len(marker_styles))
 
-
     ax.clear()
     scatters = []
     for i in range(1, len(marker_styles) + 1):
-        scatters.append(ax.scatter(map_points_x[i], map_points_y[i], marker=marker_styles[i], c=color_styles[i], s=50))
-
+        map_points_x[i] = (np.array(map_points_x[i]) + 0.5).tolist()
+        map_points_y[i] = (np.array(map_points_y[i]) + 0.5).tolist()
+        scatters.append(
+            ax.scatter(map_points_x[i], map_points_y[i], marker=marker_styles[i], c=color_styles[i], s=50))
     labels = ['干扰机', '导弹车', '雷达', '防空炮', '指挥所', '无人机']
     ax.legend(scatters, labels, loc="lower right")
     # 设置坐标轴范围和刻度
@@ -120,7 +124,45 @@ def visualizeMapIn2d(map, first=False):
     # 显示网格线
     # ax.grid(linewidth=1, color='gray', linestyle='--')
     # 显示图形
+    # plt_path = os.path.join(DATA_PATH, 'tmp')
+    # plt.savefig(plt_path + '/plt.png', format="png")
     plt.show()
+    plt.close()
+
+
+def visualizeMap(map, fig, ax):
+    # bplt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
+    markers = ['s', 'o', '^', 'D', '*', '.']
+    colors = ['blue', 'green', 'aquamarine', 'yellow', 'red', 'darkviolet']
+    # 获取矩阵的行数和列数
+    rows, cols = map.shape
+    # 创建一个空的图形对象
+    # 遍历矩阵，绘制散点图
+    ax.cla()
+    for i in range(map.shape[0]):
+        for j in range(map.shape[1]):
+            value = int(map[i, j])
+            if value != 0:
+                marker = markers[value-1]
+                color = colors[value-1]
+                ax.scatter(j+0.5, i+0.5, marker=marker, color=color, s=50)
+    legend_elements = [plt.Line2D([0], [0], marker=marker, color='w', markerfacecolor=color, markersize=10)
+                       for marker, color in zip(markers, colors)]
+    legend_labels = ['干扰机', '导弹车', '雷达', '防空炮', '指挥所', '无人机']
+    ax.legend(legend_elements, legend_labels, title='Legend', loc="lower right")
+    # 设置坐标轴范围和刻度
+    ax.set_xlim(0, cols)
+    ax.set_ylim(0, rows)
+    ax.set_xticks(np.arange(cols, step=5))
+    ax.set_yticks(np.arange(rows, step=5))
+    ax.set_title(u"战场分布图")
+    ax.set_xlabel('Y Coordinate')
+    ax.set_ylabel('X Coordinate')
+    # 隐藏坐标轴刻度线
+    ax.tick_params(axis='both', which='both', length=0)
+    plt.pause(0.1)
+    # 显示网格线
+    # ax.grid(linewidth=1, color='gray', linestyle='--')
 
 
 def plot_aux(map, length):

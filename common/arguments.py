@@ -10,30 +10,32 @@ def get_rl_common_args():
     # the environment setting
 
     parser.add_argument('--seed', type=int, default=123, help='random seed')
-    parser.add_argument('--step_mul', type=int, default=8, help='how many steps to make an action')
+    # parser.add_argument('--step_mul', type=int, default=1, help='how many steps to make an action')
     parser.add_argument('--replay_dir', type=str, default='', help='absolute path to save the replay')
+    # /home/zz/PycharmProjects/BattleSimulation/replay
     parser.add_argument('--reward_death_value', type=int, default=30, help='击毁奖励值')
     parser.add_argument('--destroyed_value', type=int, default=30, help='被击毁奖励')
     parser.add_argument('--reward_win', type=int, default=30, help='获胜奖励')
-    parser.add_argument('--episode_limit', type=int, default=30, help='nums of agents')
+    parser.add_argument('--episode_limit', type=int, default=30, help='回合限制')
     parser.add_argument('--n_agents', type=int, default=30, help='nums of agents')
     # The alternative algorithms are vdn, coma, central_v, qmix, qtran_base,
     # qtran_alt, reinforce, coma+commnet, central_v+commnet, reinforce+commnet，
     # coma+g2anet, central_v+g2anet, reinforce+g2anet, maven
-    parser.add_argument('--alg', type=str, default='iql', help='the algorithm to train the agent')
-    parser.add_argument('--n_steps', type=int, default=2000000, help='total time steps')
+    parser.add_argument('--alg', type=str, default='coma+g2anet', help='the algorithm to train the agent')
+    parser.add_argument('--n_steps', type=int, default=500000, help='total time steps')
     parser.add_argument('--n_episodes', type=int, default=1, help='the number of episodes before once training')
     parser.add_argument('--last_action', type=bool, default=True, help='whether to use the last action to choose action')
-    parser.add_argument('--reuse_network', type=bool, default=True, help='whether to use one network for all agents')
+    parser.add_argument('--reuse_network', type=bool, default=False, help='whether to use one network for all agents')
     parser.add_argument('--gamma', type=float, default=0.99, help='discount factor')
     parser.add_argument('--optimizer', type=str, default="RMS", help='optimizer')
-    parser.add_argument('--evaluate_cycle', type=int, default=5000, help='how often to evaluate the model')
+    parser.add_argument('--evaluate_cycle', type=int, default=500, help='how often to evaluate the model')
     parser.add_argument('--evaluate_epoch', type=int, default=32, help='number of the epoch to evaluate the agent')
     parser.add_argument('--model_dir', type=str, default='./model', help='model directory of the policy')
     parser.add_argument('--result_dir', type=str, default='./result', help='result directory of the policy')
     parser.add_argument('--load_model', type=bool, default=False, help='whether to load the pretrained model')
     parser.add_argument('--evaluate', type=bool, default=False, help='whether to evaluate the model')
     parser.add_argument('--cuda', type=bool, default=False, help='whether to use the GPU')
+    parser.add_argument('--is_plot', type=bool, default=False, help='whether to plot the picture in training')
     args = parser.parse_args()
     return args
 
@@ -56,7 +58,7 @@ def get_coma_args(args):
     args.td_lambda = 0.8
 
     # how often to save the model
-    args.save_cycle = 5000
+    args.save_cycle = 1000
 
     # how often to update the target_net
     args.target_update_cycle = 200
@@ -92,7 +94,7 @@ def get_mixer_args(args):
     args.buffer_size = int(5e3)
 
     # how often to save the model
-    args.save_cycle = 5000
+    args.save_cycle = 1000
 
     # how often to update the target_net
     args.target_update_cycle = 200
@@ -130,7 +132,7 @@ def get_centralv_args(args):
     args.td_lambda = 0.8
 
     # how often to save the model
-    args.save_cycle = 5000
+    args.save_cycle = 1000
 
     # how often to update the target_net
     args.target_update_cycle = 200
@@ -156,7 +158,7 @@ def get_reinforce_args(args):
     args.epsilon_anneal_scale = 'episode'
 
     # how often to save the model
-    args.save_cycle = 5000
+    args.save_cycle = 1000
 
     # prevent gradient explosion
     args.grad_norm_clip = 10

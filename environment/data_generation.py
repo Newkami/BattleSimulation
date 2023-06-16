@@ -7,8 +7,6 @@ from config import DATA_PATH
 
 class Task_Generator:
     def __init__(self):
-
-        print()
         self.jammer_df = pd.read_excel(os.path.join(DATA_PATH, 'Jammer.xlsx'))
         self.missilevehicle_df = pd.read_excel(os.path.join(DATA_PATH, 'MissileVehicle.xlsx'))
         self.radar_df = pd.read_excel(os.path.join(DATA_PATH, 'Radar.xlsx'))
@@ -29,6 +27,7 @@ class Task_Generator:
             args.mv_attack_range = 3
             args.detect_radius = 3
             args.defend_radius = 4
+            args.jm_attack_range = 4
             args.defend_coef = 0.3
 
         elif args.difficulty == 1:
@@ -42,6 +41,7 @@ class Task_Generator:
             args.mv_attack_range = 4
             args.detect_radius = 4
             args.defend_radius = 6
+            args.jm_attack_range = 6
             args.defend_coef = 0.4
 
         elif args.difficulty == 2:
@@ -51,6 +51,7 @@ class Task_Generator:
             self.radar_df = self.radar_df[self.radar_df['difficulty'] == 2].sample(args.n_radar)
             self.antiAirturrent_df = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 2].sample(
                 args.n_antiAirturrent)
+            args.jm_attack_range = 8
             args.mv_strike_ability = 3
             args.mv_attack_range = 5
             args.detect_radius = 5

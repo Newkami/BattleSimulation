@@ -5,14 +5,13 @@ import argparse
 def get_env_common_args():
     parser = argparse.ArgumentParser(description="the necessrary params of environments")
 
-    parser.add_argument('--difficulty', type=int, default=0, help='任务难度')  # 0 Easy 1 Medium 2 Hard 3 custom
+    parser.add_argument('--difficulty', type=int, default=2, help='任务难度')  # 0 Easy 1 Medium 2 Hard 3 custom
     parser.add_argument('--n_jammer', type=int, default=2, help='干扰机数量')
     parser.add_argument('--n_missilevehicle', type=int, default=2, help='导弹车数量')
     parser.add_argument('--n_radar', type=int, default=3, help='雷达数量')
     parser.add_argument('--n_antiAirturrent', type=int, default=2, help='防空炮数量')
     parser.add_argument('--n_commandpost', type=int, default=1, help='指挥所数量')
 
-    parser.add_argument('--is_plot', type=bool, default=True, help='是否画图')
     parser.add_argument('--mapX', type=int, default=50, help='the X of map size')
     parser.add_argument('--mapY', type=int, default=50, help='the Y of map size')
 
@@ -37,13 +36,13 @@ def get_env_common_args():
 
     parser.add_argument('--cp_maxHP', type=int, default=100, help='防空炮最大耐久')
 
-    parser.add_argument('--plot', type=bool, default=True)  # 是否开启plot
+    parser.add_argument('--plot', type=bool, default=True)  # 是否开启plot DEBUG用 该参数没有用到
 
     parser.add_argument('--damage_to_jammer', type=int, default=30, help='无人机对干扰机的百分比伤害')
     parser.add_argument('--damage_to_mv', type=int, default=40, help='无人机对导弹车的百分比伤害')
-    parser.add_argument('--damage_to_rd', type=int, default=50, help='无人机对雷达的百分比伤害')
-    parser.add_argument('--damage_to_aat', type=int, default=60, help='无人机对防空炮的百分比伤害')
-    parser.add_argument('--damage_to_cp', type=int, default=70, help='无人机对指挥所的百分比伤害')
+    parser.add_argument('--damage_to_rd', type=int, default=30, help='无人机对雷达的百分比伤害')
+    parser.add_argument('--damage_to_aat', type=int, default=40, help='无人机对防空炮的百分比伤害')
+    parser.add_argument('--damage_to_cp', type=int, default=50, help='无人机对指挥所的百分比伤害')
 
     parser.add_argument('--sight_range', type=int, default=4, help='无人机视野范围')
     parser.add_argument('--min_destroy_cp_num', type=int, default=3, help='击毁指挥所所需的最少无人机书数量')
@@ -51,6 +50,9 @@ def get_env_common_args():
     parser.add_argument('--attack_reward_coef', type=float, default=1.2, help='无人机攻击的奖励系数')
 
     parser.add_argument('--exceed_episode_limit_reward', type=int, default=10, help='超时惩罚')
+
+    parser.add_argument('--is_plot', type=bool, default=False, help='是否画图')
+    parser.add_argument('--is_debug', type=bool, default=False, help='是否输出日志')
     args = parser.parse_args()
     return args
 

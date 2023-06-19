@@ -76,6 +76,13 @@ class TestBattleEnv(unittest.TestCase):
         agent.execute_move(1, env.g_map)
         print(env.get_move_reward(x_last, y_last, agent.x_cord, agent.y_cord, env.commandpost))
 
+    def test_get_avail_action(self):
+        env.reset()
+        x, y = env.commandpost.x_cord, env.commandpost.y_cord
+        env.multirotors[0].x_cord = x-1
+        env.multirotors[0].y_cord = y-1
+        print(env.get_avail_agent_actions(0))
+
 
 class TestMultiRotor(unittest.TestCase):
     def test_execute_move(self):
@@ -87,8 +94,3 @@ class TestMultiRotor(unittest.TestCase):
         uav.execute_move(4, map)
 
 
-class Testlogging(unittest.TestCase):
-    from absl import logging
-    logging.info(
-
-    )

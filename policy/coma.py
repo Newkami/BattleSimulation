@@ -48,9 +48,9 @@ class COMA:
         self.model_dir = args.model_dir + '/' + args.alg + '/' + args.map
         # 如果存在模型则加载模型
         if self.args.load_model:
-            if os.path.exists(self.model_dir + '/rnn_params.pkl'):
-                path_rnn = self.model_dir + '/rnn_params.pkl'
-                path_coma = self.model_dir + '/critic_params.pkl'
+            if os.path.exists(self.model_dir + '/{}_rnn_params.pkl'.format(args.load_model_num)):
+                path_rnn = self.model_dir + '/{}_rnn_params.pkl'.format(args.load_model_num)
+                path_coma = self.model_dir + '/{}_critic_params.pkl'.format(args.load_model_num)
                 map_location = 'cuda:0' if self.args.cuda else 'cpu'
                 self.eval_rnn.load_state_dict(torch.load(path_rnn, map_location=map_location))
                 self.eval_critic.load_state_dict(torch.load(path_coma, map_location=map_location))

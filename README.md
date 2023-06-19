@@ -14,11 +14,17 @@ common rl训练常用功能包
 policy 具体的RL算法策略实现
 
 
-### quickstart
-```bash
-pip -r install requirement.txt
-```
+### 环境配置
+首先安装了miniconda用于生成虚拟环境
 
+使用目录中的requirement.txt创建conda环境
+```bash
+conda create --name <env> --file requirement.txt
+```
+**quickstart**
+```bash
+python3 main.py
+```
 ### 观测空间
 1. 无人机自身位置 和视野范围内的所有信息，包括敌军目标，和友军无人机
 2. 如何设定才能保持恒定的纬度大小？  
@@ -64,3 +70,15 @@ TASK_CONFIG = {
     }
 }
 ```
+
+修改`environment/arguments.py`中`difficulty`参数为值为3，否则自定义任务不生效
+
+
+### 日志系统
+
+1. `logger.setLevel()`：这个方法用于设置日志记录器的全局日志级别。它决定了哪些级别的日志消息将被记录。如果设置了logger.setLevel(logging.INFO)，那么只有INFO级别及以上的日志消息会被记录下来，而DEBUG级别的日志消息将被忽略。
+2. `console_handler.setLevel()`：这个方法用于设置特定处理器的日志级别。它决定了将哪些级别的日志消息发送到该处理器。如果设置了console_handler.setLevel(logging.INFO)，那么只有INFO级别及以上的日志消息会被发送到控制台处理器，而DEBUG级别的日志消息将被忽略。
+
+在示例中，`logger.setLevel(logging.INFO)`将全局的日志级别设置为INFO级别，意味着只有INFO级别及以上的日志消息会被记录。
+
+而`console_handler.setLevel(logging.INFO)`将控制台处理器的日志级别设置为INFO级别，意味着只有INFO级别及以上的日志消息会被发送到控制台处理器，而DEBUG级别的日志消息将被忽略。

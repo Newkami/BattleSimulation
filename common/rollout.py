@@ -194,7 +194,6 @@ class CommRolloutWorker:
             for agent_id in range(self.n_agents):
                 avail_action = self.env.get_avail_agent_actions(agent_id)
                 action = self.agents.choose_action(weights[agent_id], avail_action, epsilon)
-
                 # generate onehot vector of th action
                 action_onehot = np.zeros(self.args.n_actions)
                 action_onehot[action] = 1
@@ -203,7 +202,8 @@ class CommRolloutWorker:
                 avail_actions.append(avail_action)
                 last_action[agent_id] = action_onehot
             if self.args.is_plot:
-                visualizeMap(self.env.g_map, fig, ax)
+                visualizeMap(self.env.g_map, fig, ax, step)
+
             reward, terminated, info = self.env.step(actions)
             win_tag = True if terminated and 'battle_won' in info and info['battle_won'] else False
             o.append(obs)

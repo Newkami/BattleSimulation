@@ -1,15 +1,33 @@
-import atexit
-import enum
-from enum import Enum, unique
-import random
-
+from enum import IntEnum, unique
 import numpy as np
 from environment.enemy import *
-from absl import logging
-logging.set_verbosity(logging.INFO)
+import logging
 from environment.data_generation import Task_Generator
 from environment.arguments import get_multirotor_args
-from matplotlib import pyplot as plt
+import colorlog
+
+formatter = colorlog.ColoredFormatter(
+    "%(log_color)s%(asctime)s:%(levelname)s:%(name)s:%(message)s",
+    log_colors={
+        'DEBUG': 'white',
+        'INFO': 'green',
+        'WARNING': 'yellow',
+        'ERROR': 'red',
+        'CRITICAL': 'red,bg_white',
+    }
+)
+
+logger = logging.getLogger('battle_logger')
+logger.setLevel(logging.INFO)
+
+# 创建日志处理器并设置日志级别
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+
+console_handler.setFormatter(formatter)
+# 将处理器添加到日志记录器
+logger.addHandler(console_handler)
+
 
 @unique
 class Objective(enum.IntEnum):
@@ -66,11 +84,11 @@ class Multirotor:
         if g_map[act_x][act_y] != 0:  # 说明位置上有其他对象
             options = utils.getEightPointswithNoobs(act_x, act_y, g_map)
             if len(options) == 0:
-                logging.info(
-                    "warn in execute_move ({},{}),该点附近没有可选点了".format(
-                        act_x,
-                        act_y, )
-                )
+                # logging.info(
+                #     "warn in execute_move ({},{}),该点附近没有可选点了".format(
+                #         act_x,
+                #         act_y, )
+                # )
                 return
             option = random.sample(options, 1)[0]
             act_x, act_y = option[0], option[1]
@@ -91,7 +109,11 @@ class Multirotor:
             can_attack = True
         elif distance > self.attack_range and distance <= self.sight_range:
             options = utils.get_MatrixWithNoObjs(target.x_cord, target.y_cord, g_map, 2)  # 获取两圈更稳健
-            assert len(options) != 0, f"({target.x_cord},{target.y_cord})errro in execute_attack: 该点附近没有可选点了"
+            # assert len(options) != 0, f"({target.x_cord},{target.y_cord})errro in execute_attack: 该点附近没有可选点了"
+            if len(options)==0:
+                if self.args.is_debug:
+                    logger.warn(f"({target.x_cord},{target.y_cord})errro in execute_attack: 该点附近没有可选点了")
+                    return False  # 不能攻击 但也不能移动
             intend_pos = random.sample(options, 1)[0]
             act_x, act_y = intend_pos[0], intend_pos[1]
             g_map[self.x_cord][self.y_cord] = Objective.EMPTY
@@ -254,6 +276,8 @@ class BattleEnv(MultiAgentEnv):
         self._episode_steps = 0
 
         self.is_plot = args.is_plot
+        self.is_debug = args.is_debug
+
     # 生成作战地图
     def generate_map(self):
         map_t = np.zeros(shape=(self.args.mapX, self.args.mapY))
@@ -302,6 +326,7 @@ class BattleEnv(MultiAgentEnv):
     def initializeMultirotors(self, mapX):
         uav_args = get_multirotor_args()
         uav_args.sight_range = self.sight_range
+        uav_args.is_debug = self.args.is_debug
         start_x = 1
         end_x = mapX - 25
         start_y = 0
@@ -388,6 +413,9 @@ class BattleEnv(MultiAgentEnv):
 
         fi_reward = np.mean(rewards)
         terminated, win_tag = self.isDone()
+        if self.is_debug:
+            logger.info("是否终止：{}，是否获胜：{} 指挥所的血量：{}".format(terminated, win_tag, self.commandpost.HP))
+
         if win_tag:
             fi_reward += self.reward_win
         # fi_reward -= 5  # 每经过一个回合奖励值降低
@@ -588,11 +616,18 @@ class BattleEnv(MultiAgentEnv):
             sight_range = agent.get_sight_range()
             target_items = self.target_map.items()
             for k, v in target_items:
-                if utils.distance_between_objects_in_2d(agent, v) <= sight_range:
-                    avail_actions[4 + v.battle_id] = 1
+                if v.isAlive:  # promise the target is alive
+                    dis = utils.distance_between_objects_in_2d(agent, v)
+                    if v.target_type == Enemy.JAMMER:
+                        # for jammer ,the target must be takingoff state so that it can be atk
+                        if v.isTakingoff and dis <= sight_range + 1:
+                            avail_actions[4 + v.battle_id] = 1
+                    else:
+                        if dis <= sight_range + 1:
+                            avail_actions[4 + v.battle_id] = 1
             return avail_actions
         else:
-            return [1] + [0] * (self.n_actions - 1)
+            return [1] + [0] * (self.n_actions - 1)  # avail uav for dead uav
 
     def get_avail_actions(self):
         avail_actions = []

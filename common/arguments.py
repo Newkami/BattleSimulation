@@ -14,9 +14,9 @@ def get_rl_common_args():
     parser.add_argument('--replay_dir', type=str, default='', help='absolute path to save the replay')
     # /home/zz/PycharmProjects/BattleSimulation/replay
     parser.add_argument('--reward_death_value', type=int, default=30, help='击毁奖励值')
-    parser.add_argument('--destroyed_value', type=int, default=30, help='被击毁奖励')
-    parser.add_argument('--reward_win', type=int, default=30, help='获胜奖励')
-    parser.add_argument('--episode_limit', type=int, default=30, help='回合限制')
+    parser.add_argument('--destroyed_value', type=int, default=20, help='被击毁惩罚')
+    parser.add_argument('--reward_win', type=int, default=100, help='获胜奖励')
+    parser.add_argument('--episode_limit', type=int, default=90, help='回合限制')
     parser.add_argument('--n_agents', type=int, default=30, help='nums of agents')
     # The alternative algorithms are vdn, coma, central_v, qmix, qtran_base,
     # qtran_alt, reinforce, coma+commnet, central_v+commnet, reinforce+commnet，
@@ -32,10 +32,15 @@ def get_rl_common_args():
     parser.add_argument('--evaluate_epoch', type=int, default=32, help='number of the epoch to evaluate the agent')
     parser.add_argument('--model_dir', type=str, default='./model', help='model directory of the policy')
     parser.add_argument('--result_dir', type=str, default='./result', help='result directory of the policy')
-    parser.add_argument('--load_model', type=bool, default=False, help='whether to load the pretrained model')
-    parser.add_argument('--evaluate', type=bool, default=False, help='whether to evaluate the model')
-    parser.add_argument('--cuda', type=bool, default=False, help='whether to use the GPU')
-    parser.add_argument('--is_plot', type=bool, default=False, help='whether to plot the picture in training')
+
+    parser.add_argument('--load_model', type=bool, default=True, help='whether to load the pretrained model')
+    parser.add_argument('--load_model_num', type=int, default=4, help='使用第几次的训练model')
+    parser.add_argument('--evaluate', type=bool, default=True, help='whether to evaluate the model')
+    parser.add_argument('--cuda', type=bool, default=True, help='whether to use the GPU')
+
+
+    parser.add_argument('--is_plot', type=bool, default=True, help='whether to plot the picture in training')
+    parser.add_argument('--is_debug',type=bool,default=False, help='whether to start debug')
     args = parser.parse_args()
     return args
 

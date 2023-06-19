@@ -90,7 +90,7 @@ def getEightPointswithNoobs(x, y, map) -> list:
     return result
 
 
-def visualizeMapIn2d(map, first=False):
+def visualizeMapIn2d(map, first=False):  # 旧版画图函数 已被弃用
     # bplt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
     marker_styles = {1: 's', 2: 'o', 3: '^', 4: 'D', 5: '*', 6: '.'}
     color_styles = {1: 'blue', 2: 'green', 3: 'aquamarine', 4: 'yellow', 5: 'red', 6: 'darkviolet'}
@@ -130,7 +130,7 @@ def visualizeMapIn2d(map, first=False):
     plt.close()
 
 
-def visualizeMap(map, fig, ax):
+def visualizeMap(map, fig, ax, step):
     # bplt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
     markers = ['s', 'o', '^', 'D', '*', '.']
     colors = ['blue', 'green', 'aquamarine', 'yellow', 'red', 'darkviolet']
@@ -145,19 +145,20 @@ def visualizeMap(map, fig, ax):
             if value != 0:
                 marker = markers[value-1]
                 color = colors[value-1]
-                ax.scatter(j+0.5, i+0.5, marker=marker, color=color, s=50)
+                ax.scatter(i+0.5, j+0.5, marker=marker, color=color, s=50)
     legend_elements = [plt.Line2D([0], [0], marker=marker, color='w', markerfacecolor=color, markersize=10)
                        for marker, color in zip(markers, colors)]
     legend_labels = ['干扰机', '导弹车', '雷达', '防空炮', '指挥所', '无人机']
-    ax.legend(legend_elements, legend_labels, title='Legend', loc="lower right")
+    ax.legend(legend_elements, legend_labels, title='Legend', loc="upper left")
     # 设置坐标轴范围和刻度
     ax.set_xlim(0, cols)
     ax.set_ylim(0, rows)
     ax.set_xticks(np.arange(cols, step=5))
     ax.set_yticks(np.arange(rows, step=5))
-    ax.set_title(u"战场分布图")
-    ax.set_xlabel('Y Coordinate')
-    ax.set_ylabel('X Coordinate')
+    ax.set_title(u"战场分布图_step{}".format(step))
+    ax.set_xlabel('X Coordinate')
+    ax.set_ylabel('Y Coordinate')
+
     # 隐藏坐标轴刻度线
     ax.tick_params(axis='both', which='both', length=0)
     plt.pause(0.1)

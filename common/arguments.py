@@ -35,11 +35,11 @@ def get_rl_common_args():
 
     parser.add_argument('--load_model', type=bool, default=True, help='whether to load the pretrained model')
     parser.add_argument('--load_model_num', type=int, default=4, help='使用第几次的训练model')
-    parser.add_argument('--evaluate', type=bool, default=True, help='whether to evaluate the model')
+    parser.add_argument('--evaluate', type=bool, default=False, help='whether to evaluate the model')
     parser.add_argument('--cuda', type=bool, default=True, help='whether to use the GPU')
 
 
-    parser.add_argument('--is_plot', type=bool, default=True, help='whether to plot the picture in training')
+    parser.add_argument('--is_plot', type=bool, default=False, help='whether to plot the picture in training')
     parser.add_argument('--is_debug',type=bool,default=False, help='whether to start debug')
     args = parser.parse_args()
     return args

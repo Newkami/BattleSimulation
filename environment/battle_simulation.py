@@ -113,7 +113,7 @@ class Multirotor:
             if len(options)==0:
                 if self.args.is_debug:
                     logger.warn(f"({target.x_cord},{target.y_cord})errro in execute_attack: 该点附近没有可选点了")
-                    return False  # 不能攻击 但也不能移动
+                return False  # 不能攻击 但也不能移动
             intend_pos = random.sample(options, 1)[0]
             act_x, act_y = intend_pos[0], intend_pos[1]
             g_map[self.x_cord][self.y_cord] = Objective.EMPTY

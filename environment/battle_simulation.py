@@ -418,6 +418,7 @@ class BattleEnv(MultiAgentEnv):
 
         if win_tag:
             fi_reward += self.reward_win
+            logger.info(f"取得胜利，所花费的回合数{self._episode_steps}")
         # fi_reward -= 5  # 每经过一个回合奖励值降低
         info = {"battle_won": win_tag}
 

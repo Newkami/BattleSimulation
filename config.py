@@ -4,7 +4,6 @@ ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(ROOT_PATH, 'data')
 LOG_PATH = os.path.join(ROOT_PATH, 'logs')
 
-
 TASK_CONFIG = {
     "total_num": 9,  # 保证下面的设置数量要和total_num相等 不然会发生aseert错误
     "jammers": {
@@ -26,5 +25,7 @@ TASK_CONFIG = {
         "easy": 1,
         "medium": 0,
         "hard": 1
-    }
+    },
+    "init_command_x": 42,
+    "init_command_y": 42,
 }

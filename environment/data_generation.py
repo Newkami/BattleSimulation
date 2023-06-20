@@ -4,6 +4,30 @@ import os
 from environment.enemy import *
 from config import DATA_PATH
 
+EASY_MV_ABILITY = 1
+MEDIUM_MV_ABILITY = 2
+HARD_MV_ABILITY = 3
+
+EASY_MV_ATK_RANGE = 3
+MEDIUM_MV_ATK_RANGE = 4
+HARD_MV_ATK_RANGE = 5
+
+EASY_RD_DTC_RADIUS = 3
+MEDIUM_RD_DTC_RADIUS = 4
+HARD_RD_DTC_RADIUS = 5
+
+EASY_AT_DFD_RADIUS = 4
+MEDIUM_AT_DFD_RADIUS = 6
+HARD_AT_DFD_RADIUS = 8
+
+EASY_JM_ATK_RANGE = 4
+MEDIUM_JM_ATK_RANGE = 6
+HARD_JM_ATK_RANGE = 8
+
+EASY_AT_DFD_COEF = 0.3
+MEDIUM_AT_DFD_COEF = 0.4
+HARD_JM_AT_DFD_COEF = 0.6
+
 
 class Task_Generator:
     def __init__(self):
@@ -14,6 +38,7 @@ class Task_Generator:
         self.commandpost_df = pd.read_excel(os.path.join(DATA_PATH, 'Commandpost.xlsx'))
 
     def generate_task(self, args):
+
         assert args.difficulty in [0, 1, 2, 3], \
             f"difficulty is invalid, invalid value = {args.difficulty}, the avail options are [0,1,2,3]"
         if args.difficulty == 0:
@@ -23,12 +48,12 @@ class Task_Generator:
             self.radar_df = self.radar_df[self.radar_df['difficulty'] == 0].sample(args.n_radar)
             self.antiAirturrent_df = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 0].sample(
                 args.n_antiAirturrent)
-            args.mv_strike_ability = 1
-            args.mv_attack_range = 3
-            args.detect_radius = 3
-            args.defend_radius = 4
-            args.jm_attack_range = 4
-            args.defend_coef = 0.3
+            args.mv_strike_ability = EASY_MV_ABILITY
+            args.mv_attack_range = EASY_MV_ATK_RANGE
+            args.detect_radius = EASY_RD_DTC_RADIUS
+            args.defend_radius = EASY_AT_DFD_RADIUS
+            args.jm_attack_range = EASY_JM_ATK_RANGE
+            args.defend_coef = EASY_AT_DFD_COEF
 
         elif args.difficulty == 1:
             self.jammer_df = self.jammer_df[self.jammer_df['difficulty'] == 1].sample(args.n_jammer)
@@ -37,12 +62,12 @@ class Task_Generator:
             self.radar_df = self.radar_df[self.radar_df['difficulty'] == 1].sample(args.n_radar)
             self.antiAirturrent_df = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 1].sample(
                 args.n_antiAirturrent)
-            args.mv_strike_ability = 2
-            args.mv_attack_range = 4
-            args.detect_radius = 4
-            args.defend_radius = 6
-            args.jm_attack_range = 6
-            args.defend_coef = 0.4
+            args.mv_strike_ability = MEDIUM_MV_ABILITY
+            args.mv_attack_range = MEDIUM_MV_ATK_RANGE
+            args.detect_radius = MEDIUM_RD_DTC_RADIUS
+            args.defend_radius = MEDIUM_AT_DFD_RADIUS
+            args.jm_attack_range = MEDIUM_JM_ATK_RANGE
+            args.defend_coef = MEDIUM_AT_DFD_COEF
 
         elif args.difficulty == 2:
             self.jammer_df = self.jammer_df[self.jammer_df['difficulty'] == 2].sample(args.n_jammer)
@@ -51,12 +76,12 @@ class Task_Generator:
             self.radar_df = self.radar_df[self.radar_df['difficulty'] == 2].sample(args.n_radar)
             self.antiAirturrent_df = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 2].sample(
                 args.n_antiAirturrent)
-            args.jm_attack_range = 8
-            args.mv_strike_ability = 3
-            args.mv_attack_range = 5
-            args.detect_radius = 5
-            args.defend_radius = 8
-            args.defend_coef = 0.6
+            args.mv_strike_ability = HARD_MV_ABILITY
+            args.mv_attack_range = HARD_MV_ATK_RANGE
+            args.detect_radius = HARD_RD_DTC_RADIUS
+            args.defend_radius = HARD_AT_DFD_RADIUS
+            args.jm_attack_range = HARD_JM_ATK_RANGE
+            args.defend_coef = HARD_JM_AT_DFD_COEF
 
         else:
             """
@@ -64,7 +89,7 @@ class Task_Generator:
              其中mv_strike_ability mv_attack_range detect_radius defend_radius defend_coef使用arguments的默认值
             """
             from config import TASK_CONFIG  # 读取配置信息
-            self.custom_task_aux(TASK_CONFIG, args)
+            commandpost = self.custom_task_aux2(TASK_CONFIG, args)
 
         # 坐标四舍五入处理 fixme:坐标值其实最好不要出现小数点 那么直接设置为int类型即可
         self.jammer_df['pos_x'] = np.round(self.jammer_df['pos_x'], 0).astype(int)
@@ -102,10 +127,42 @@ class Task_Generator:
                 AntiAircraftTurret(row['id'], row['pos_x'], row['pos_y'], idx, args)
             )
             idx += 1
-        commandpost = CommandPost("CommandPost", args.mapX - 2, args.mapY - 2, idx, args)
+        if args.difficulty != 3:
+            commandpost = CommandPost("CommandPost", args.mapX - 2, args.mapY - 2, idx, args)
         # SECTION:返回四种目标的集合 和一个指挥所
         return jammers, missile_vehicles, radars, antiAirturrents, commandpost
 
+    # 新版不读取表格数据 目标位置 随机生成
+    def custom_task_aux2(self, config, args):
+        total_num = config['total_num']
+        jm_num_e = config['jammers']['easy']
+        jm_num_m = config['jammers']['medium']
+        jm_num_h = config['jammers']['hard']
+        jm_num = jm_num_e + jm_num_m + jm_num_h
+        mv_num_e = config['missile_vehicles']['easy']
+        mv_num_m = config['missile_vehicles']['medium']
+        mv_num_h = config['missile_vehicles']['hard']
+        mv_num = mv_num_e + mv_num_m + mv_num_h
+        # 雷达
+        rd_num_e = config['radars']['easy']
+        rd_num_m = config['radars']['medium']
+        rd_num_h = config['radars']['hard']
+        rd_num = rd_num_e + rd_num_m + rd_num_h
+        aat_num_e = config['antiairturrents']['easy']
+        aat_num_m = config['antiairturrents']['medium']
+        aat_num_h = config['antiairturrents']['hard']
+        aat_num = aat_num_e + aat_num_m + aat_num_h
+        assert total_num == rd_num + aat_num + mv_num + jm_num, "error total_num is different from other target"
+        init_x = config['init_commandpost_x']
+        init_y = config['init_commandpost_y']
+        commandpost = CommandPost("CommandPost", init_x, init_y, total_num, args)
+        # 获取5圈的可选范围
+        options = utils.get_MatrixWithNoObjs(init_x, init_y, np.zeros((args.mapX, args.mapY), dtype=int), 5)
+        # todo 完成只选择该点范围内 左边和下方的点 并不选择该目标点后方的点
+        actual_positons = random.sample(options, total_num)
+        return commandpost
+
+    # 旧版custom_task 实验数据还是从表格中读取
     def custom_task_aux(self, config, args):
         total_num = config['total_num']
         jm_num_e = config['jammers']['easy']

@@ -108,7 +108,7 @@ def visualizeMapIn2d(map, first=False):  # 旧版画图函数 已被弃用
         map_points_x[i] = (np.array(map_points_x[i]) + 0.5).tolist()
         map_points_y[i] = (np.array(map_points_y[i]) + 0.5).tolist()
         scatters.append(
-            ax.scatter(map_points_x[i], map_points_y[i], marker=marker_styles[i], c=color_styles[i], s=50))
+            ax.scatter(map_points_x[i], map_points_y[i], marker=marker_styles[i], c=color_styles[i], s=30))
     labels = ['干扰机', '导弹车', '雷达', '防空炮', '指挥所', '无人机']
     ax.legend(scatters, labels, loc="lower right")
     # 设置坐标轴范围和刻度
@@ -143,9 +143,9 @@ def visualizeMap(map, fig, ax, step):
         for j in range(map.shape[1]):
             value = int(map[i, j])
             if value != 0:
-                marker = markers[value-1]
-                color = colors[value-1]
-                ax.scatter(i+0.5, j+0.5, marker=marker, color=color, s=50)
+                marker = markers[value - 1]
+                color = colors[value - 1]
+                ax.scatter(i + 0.5, j + 0.5, marker=marker, color=color, s=50)
     legend_elements = [plt.Line2D([0], [0], marker=marker, color='w', markerfacecolor=color, markersize=10)
                        for marker, color in zip(markers, colors)]
     legend_labels = ['干扰机', '导弹车', '雷达', '防空炮', '指挥所', '无人机']
@@ -215,3 +215,41 @@ def get_size_by_n(sight_range):
     if sight_range == 0:
         return 0
     return get_size_by_n(sight_range - 1) + 8 * sight_range
+
+
+def get_points_in_quadrants(origin, n_range):
+    points = []
+
+    # 第二象限
+    for x in range(-n_range, -5):
+        for y in range(-n_range, -5):
+            points.append((origin[0] + x, origin[1] + y))
+
+    # 第三象限
+    for x in range(-n_range, -5):
+        for y in range(5, n_range + 1):
+            points.append((origin[0] + x, origin[1] - y))
+
+    # 第四象限
+    for x in range(5, n_range + 1):
+        for y in range(5, n_range + 1):
+            points.append((origin[0] + x, origin[1] - y))
+
+    return points
+
+
+def get_quadrantsPointwithNoObjs(x, y, map, n_circle=1) -> list:
+    """
+        :param x:
+        :param y:
+        :param mapX:
+        :param mapY:
+        :return: 获得以x y为中心的方阵n圈方阵，并且排除了多余的已存在的目标和(x,y)本身
+    """
+
+    cords = get_points_in_quadrants((x, y), n_circle)
+    result = []
+    for option in cords:
+        if IsInMap(option[0], option[1], map.shape[0], map.shape[1]) and map[option[0]][option[1]] == 0:
+            result.append(option)
+    return result

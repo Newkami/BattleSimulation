@@ -18,14 +18,14 @@ TASK_CONFIG = {
     },
     "radars": {
         "easy": 1,
-        "medium": 1,
+        "medium": 0,
         "hard": 1
     },
     "antiairturrents": {
         "easy": 1,
-        "medium": 0,
+        "medium": 1,
         "hard": 1
     },
-    "init_command_x": 42,
-    "init_command_y": 42,
+    "init_commandpost_x": 40,
+    "init_commandpost_y": 40,
 }

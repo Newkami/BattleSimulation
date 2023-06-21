@@ -110,9 +110,9 @@ class Multirotor:
         elif distance > self.attack_range and distance <= self.sight_range:
             options = utils.get_MatrixWithNoObjs(target.x_cord, target.y_cord, g_map, 2)  # 获取两圈更稳健
             # assert len(options) != 0, f"({target.x_cord},{target.y_cord})errro in execute_attack: 该点附近没有可选点了"
-            if len(options)==0:
+            if len(options) == 0:
                 if self.args.is_debug:
-                    logger.warn(f"({target.x_cord},{target.y_cord})errro in execute_attack: 该点附近没有可选点了")
+                    logger.warn(f"({target.x_cord},{target.y_cord})error in execute_attack: 该点附近没有可选点了")
                 return False  # 不能攻击 但也不能移动
             intend_pos = random.sample(options, 1)[0]
             act_x, act_y = intend_pos[0], intend_pos[1]
@@ -541,7 +541,7 @@ class BattleEnv(MultiAgentEnv):
             if target.target_type in [Enemy.JAMMER, Enemy.MISSILEVEHICLE]:  # 若攻击的目标是干扰机或导弹车
                 reward *= self.attack_reward_coef
             elif target.target_type == Enemy.COMMANDPOST:
-                reward *= self.attack_reward_coef + 0.3  # 如果是指挥所奖励值更多一些
+                reward *= self.attack_reward_coef + 0.5  # 如果是指挥所奖励值更多一些
                 if not alive_st:
                     reward += self.reward_death_value
         else:  # 如果不能攻击，就产生移动损失

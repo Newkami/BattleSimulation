@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy
+import numpy as np
 
 from environment.utils import *
 import unittest
@@ -28,3 +29,11 @@ class TestTask_Generator(unittest.TestCase):
     def test_get_size(self):
         for i in range(5):
             print(f'{i}', get_size_by_n(i))
+
+    def test_get_points_in_quadrants(self):
+        print(get_points_in_quadrants((0, 0), 5))
+
+    def test_get_quadrantsPointwithNoObjs(self):
+        options = get_quadrantsPointwithNoObjs(5, 5, np.zeros((50, 50)), 5)
+        print(len(options))
+        print(options)

@@ -5,11 +5,13 @@ import argparse
 def get_env_common_args():
     parser = argparse.ArgumentParser(description="the necessrary params of environments")
 
-    parser.add_argument('--difficulty', type=int, default=2, help='任务难度')  # 0 Easy 1 Medium 2 Hard 3 custom
+    parser.add_argument('--difficulty', type=int, default=1, help='任务难度')  # 0 Easy 1 Medium 2 Hard 3 custom
+    # fixme 如果在custom难度下 修改了config.py下的敌军数量时，还要改变此处参数的arguments.py 否则会出现环境初始化错误
+    # fixme 这是由于环境的构造函数会先读取这个值，但是环境的私有变量是在reset后才更新的
     parser.add_argument('--n_jammer', type=int, default=2, help='干扰机数量')
     parser.add_argument('--n_missilevehicle', type=int, default=2, help='导弹车数量')
-    parser.add_argument('--n_radar', type=int, default=3, help='雷达数量')
-    parser.add_argument('--n_antiAirturrent', type=int, default=2, help='防空炮数量')
+    parser.add_argument('--n_radar', type=int, default=2, help='雷达数量')
+    parser.add_argument('--n_antiAirturrent', type=int, default=3, help='防空炮数量')
     parser.add_argument('--n_commandpost', type=int, default=1, help='指挥所数量')
 
     parser.add_argument('--mapX', type=int, default=50, help='the X of map size')
@@ -46,8 +48,8 @@ def get_env_common_args():
 
     parser.add_argument('--sight_range', type=int, default=4, help='无人机视野范围')
     parser.add_argument('--min_destroy_cp_num', type=int, default=3, help='击毁指挥所所需的最少无人机书数量')
-    parser.add_argument('--move_reward_coef', type=float, default=1.5, help='无人机移动的奖励系数')
-    parser.add_argument('--attack_reward_coef', type=float, default=1.2, help='无人机攻击的奖励系数')
+    parser.add_argument('--move_reward_coef', type=float, default=1.2, help='无人机移动的奖励系数')
+    parser.add_argument('--attack_reward_coef', type=float, default=1.5, help='无人机攻击的奖励系数')
 
     parser.add_argument('--exceed_episode_limit_reward', type=int, default=10, help='超时惩罚')
 

@@ -21,6 +21,7 @@ if __name__ == '__main__':
         if rl_args.alg.find('g2anet') > -1:
             rl_args = get_g2anet_args(rl_args)
         env = BattleEnv(env_args, rl_args)
+        # env.reset()
         env_info = env.get_env_info()
         rl_args.n_actions = env_info["n_actions"]
         rl_args.n_agents = env_info["n_agents"]

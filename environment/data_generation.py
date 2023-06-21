@@ -29,6 +29,36 @@ MEDIUM_AT_DFD_COEF = 0.4
 HARD_JM_AT_DFD_COEF = 0.6
 
 
+def Get_Easyargs(args):
+    args.mv_strike_ability = EASY_MV_ABILITY
+    args.mv_attack_range = EASY_MV_ATK_RANGE
+    args.detect_radius = EASY_RD_DTC_RADIUS
+    args.defend_radius = EASY_AT_DFD_RADIUS
+    args.jm_attack_range = EASY_JM_ATK_RANGE
+    args.defend_coef = EASY_AT_DFD_COEF
+    return args
+
+
+def Get_Mediumargs(args):
+    args.mv_strike_ability = MEDIUM_MV_ABILITY
+    args.mv_attack_range = MEDIUM_MV_ATK_RANGE
+    args.detect_radius = MEDIUM_RD_DTC_RADIUS
+    args.defend_radius = MEDIUM_AT_DFD_RADIUS
+    args.jm_attack_range = MEDIUM_JM_ATK_RANGE
+    args.defend_coef = MEDIUM_AT_DFD_COEF
+    return args
+
+
+def Get_Hardargs(args):
+    args.mv_strike_ability = HARD_MV_ABILITY
+    args.mv_attack_range = HARD_MV_ATK_RANGE
+    args.detect_radius = HARD_RD_DTC_RADIUS
+    args.defend_radius = HARD_AT_DFD_RADIUS
+    args.jm_attack_range = HARD_JM_ATK_RANGE
+    args.defend_coef = HARD_JM_AT_DFD_COEF
+    return args
+
+
 class Task_Generator:
     def __init__(self):
         self.jammer_df = pd.read_excel(os.path.join(DATA_PATH, 'Jammer.xlsx'))
@@ -48,12 +78,7 @@ class Task_Generator:
             self.radar_df = self.radar_df[self.radar_df['difficulty'] == 0].sample(args.n_radar)
             self.antiAirturrent_df = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 0].sample(
                 args.n_antiAirturrent)
-            args.mv_strike_ability = EASY_MV_ABILITY
-            args.mv_attack_range = EASY_MV_ATK_RANGE
-            args.detect_radius = EASY_RD_DTC_RADIUS
-            args.defend_radius = EASY_AT_DFD_RADIUS
-            args.jm_attack_range = EASY_JM_ATK_RANGE
-            args.defend_coef = EASY_AT_DFD_COEF
+            args = Get_Easyargs(args)
 
         elif args.difficulty == 1:
             self.jammer_df = self.jammer_df[self.jammer_df['difficulty'] == 1].sample(args.n_jammer)
@@ -62,12 +87,7 @@ class Task_Generator:
             self.radar_df = self.radar_df[self.radar_df['difficulty'] == 1].sample(args.n_radar)
             self.antiAirturrent_df = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 1].sample(
                 args.n_antiAirturrent)
-            args.mv_strike_ability = MEDIUM_MV_ABILITY
-            args.mv_attack_range = MEDIUM_MV_ATK_RANGE
-            args.detect_radius = MEDIUM_RD_DTC_RADIUS
-            args.defend_radius = MEDIUM_AT_DFD_RADIUS
-            args.jm_attack_range = MEDIUM_JM_ATK_RANGE
-            args.defend_coef = MEDIUM_AT_DFD_COEF
+            args = Get_Mediumargs(args)
 
         elif args.difficulty == 2:
             self.jammer_df = self.jammer_df[self.jammer_df['difficulty'] == 2].sample(args.n_jammer)
@@ -76,12 +96,7 @@ class Task_Generator:
             self.radar_df = self.radar_df[self.radar_df['difficulty'] == 2].sample(args.n_radar)
             self.antiAirturrent_df = self.antiAirturrent_df[self.antiAirturrent_df['difficulty'] == 2].sample(
                 args.n_antiAirturrent)
-            args.mv_strike_ability = HARD_MV_ABILITY
-            args.mv_attack_range = HARD_MV_ATK_RANGE
-            args.detect_radius = HARD_RD_DTC_RADIUS
-            args.defend_radius = HARD_AT_DFD_RADIUS
-            args.jm_attack_range = HARD_JM_ATK_RANGE
-            args.defend_coef = HARD_JM_AT_DFD_COEF
+            args = Get_Hardargs(args)
 
         else:
             """
@@ -89,9 +104,10 @@ class Task_Generator:
              其中mv_strike_ability mv_attack_range detect_radius defend_radius defend_coef使用arguments的默认值
             """
             from config import TASK_CONFIG  # 读取配置信息
-            commandpost = self.custom_task_aux2(TASK_CONFIG, args)
+            jammers, missile_vehicles, radars, antiAirturrents, commandpost = self.custom_task_aux2(TASK_CONFIG, args)
+            return jammers, missile_vehicles, radars, antiAirturrents, commandpost
 
-        # 坐标四舍五入处理 fixme:坐标值其实最好不要出现小数点 那么直接设置为int类型即可
+        # 坐标四舍五入处理 坐标值其实最好不要出现小数点 那么直接设置为int类型即可
         self.jammer_df['pos_x'] = np.round(self.jammer_df['pos_x'], 0).astype(int)
         self.jammer_df['pos_y'] = np.round(self.jammer_df['pos_y'], 0).astype(int)
         self.missilevehicle_df['pos_x'] = np.round(self.missilevehicle_df['pos_x'], 0).astype(int)
@@ -139,6 +155,7 @@ class Task_Generator:
         jm_num_m = config['jammers']['medium']
         jm_num_h = config['jammers']['hard']
         jm_num = jm_num_e + jm_num_m + jm_num_h
+
         mv_num_e = config['missile_vehicles']['easy']
         mv_num_m = config['missile_vehicles']['medium']
         mv_num_h = config['missile_vehicles']['hard']
@@ -155,12 +172,126 @@ class Task_Generator:
         assert total_num == rd_num + aat_num + mv_num + jm_num, "error total_num is different from other target"
         init_x = config['init_commandpost_x']
         init_y = config['init_commandpost_y']
-        commandpost = CommandPost("CommandPost", init_x, init_y, total_num, args)
-        # 获取5圈的可选范围
-        options = utils.get_MatrixWithNoObjs(init_x, init_y, np.zeros((args.mapX, args.mapY), dtype=int), 5)
+        commandpost = CommandPost("CommandPost", init_x, init_y, total_num + 1, args)
+        # 获取5圈的可选范围 获取以初始点为原点的二 三 四象限的所有点
+        options = utils.get_MatrixWithNoObjs(init_x, init_y, np.zeros((args.mapX, args.mapY)), 10)
+        # options = utils.get_quadrantsPointwithNoObjs(init_x, init_y, np.zeros((args.mapX, args.mapY), dtype=int), 20)
         # todo 完成只选择该点范围内 左边和下方的点 并不选择该目标点后方的点
+        assert len(options) >= total_num, "you betther check out the init_commandpost position or the num of target in config.py ,because the rest empty points are not enough\
+            to sample for objects"
+
         actual_positons = random.sample(options, total_num)
-        return commandpost
+        jammers = []
+        missile_vehicles = []
+        radars = []
+        antiAirturrents = []
+        idx = 1
+        jm_idx = 1
+        mv_idx = 1
+        rd_idx = 1
+        aat_idx = 1
+        args = Get_Easyargs(args)
+        if jm_num_e > 0:
+            for i in range(jm_num_e):
+                jammers.append(
+                    Jammer(f'customJammer_{jm_idx}', actual_positons[idx - 1][0], actual_positons[idx - 1][1],
+                           jm_idx,
+                           args))
+                jm_idx += 1
+                idx += 1
+        if mv_num_e > 0:
+            for i in range(mv_num_e):
+                missile_vehicles.append(
+                    MissileVehicle(f'customMissileVehicle_{mv_idx}', actual_positons[idx - 1][0],
+                                   actual_positons[idx - 1][1],
+                                   mv_idx + jm_num, args))
+                mv_idx += 1
+                idx += 1
+        if rd_num_e > 0:
+            for i in range(rd_num_e):
+                radars.append(
+                    Radar(f'customRadar_{rd_idx}', actual_positons[idx - 1][0], actual_positons[idx - 1][1],
+                          rd_idx + mv_num + jm_num, args))
+                rd_idx += 1
+                idx += 1
+        if aat_num_e > 0:
+            for i in range(aat_num_e):
+                antiAirturrents.append(
+                    AntiAircraftTurret(f'customAntiTurrent_{aat_idx}', actual_positons[idx - 1][0],
+                                       actual_positons[idx - 1][1], aat_idx + rd_num + mv_num + jm_num, args))
+                aat_idx += 1
+                idx += 1
+
+        args = Get_Mediumargs(args)
+        if jm_num_m > 0:
+            for i in range(jm_num_m):
+                jammers.append(
+                    Jammer(f'customJammer_{jm_idx}', actual_positons[idx - 1][0], actual_positons[idx - 1][1], jm_idx,
+                           args))
+                jm_idx += 1
+                idx += 1
+        if mv_num_m > 0:
+            for i in range(mv_num_m):
+                missile_vehicles.append(
+                    MissileVehicle(f'customMissileVehicle_{mv_idx}', actual_positons[idx - 1][0],
+                                   actual_positons[idx - 1][1],
+                                   jm_num + mv_idx, args))
+                jm_idx += 1
+                idx += 1
+        if rd_num_m > 0:
+            for i in range(rd_num_m):
+                radars.append(
+                    Radar(f'customRadar_{rd_idx}', actual_positons[idx - 1][0], actual_positons[idx - 1][1],
+                          jm_num + mv_num + rd_idx,
+                          args))
+                rd_idx += 1
+                idx += 1
+        if aat_num_m > 0:
+            for i in range(aat_num_m):
+                antiAirturrents.append(
+                    AntiAircraftTurret(f'customAntiTurrent_{aat_idx}', actual_positons[idx - 1][0],
+                                       actual_positons[idx - 1][1], jm_num + mv_num + rd_num + aat_idx,
+                                       args))
+                aat_idx += 1
+                idx += 1
+
+        args = Get_Hardargs(args)
+        if jm_num_h > 0:
+            for i in range(jm_num_h):
+                jammers.append(
+                    Jammer(f'customJammer_{jm_idx}', actual_positons[idx - 1][0], actual_positons[idx - 1][1], jm_idx,
+                           args))
+                jm_idx += 1
+                idx += 1
+        if mv_num_h > 0:
+            for i in range(mv_num_h):
+                missile_vehicles.append(
+                    MissileVehicle(f'customMissileVehicle_{mv_idx}', actual_positons[idx - 1][0],
+                                   actual_positons[idx - 1][1],
+                                   jm_num + mv_idx, args))
+                jm_idx += 1
+                idx += 1
+        if rd_num_h > 0:
+            for i in range(rd_num_h):
+                radars.append(
+                    Radar(f'customRadar_{rd_idx}', actual_positons[idx - 1][0], actual_positons[idx - 1][1],
+                          jm_num + mv_num + rd_idx,
+                          args))
+                rd_idx += 1
+                idx += 1
+        if aat_num_h > 0:
+            for i in range(aat_num_h):
+                antiAirturrents.append(
+                    AntiAircraftTurret(f'customAntiTurrent_{aat_idx}', actual_positons[idx - 1][0],
+                                       actual_positons[idx - 1][1], jm_num + mv_num + rd_num + aat_idx,
+                                       args))
+                aat_idx += 1
+                idx += 1
+        args.n_jammer = len(jammers)
+        args.n_missilevehicle = len(missile_vehicles)
+        args.n_radar = len(radars)
+        args.n_antiAirturrent = len(antiAirturrents)
+        return jammers, missile_vehicles, radars, antiAirturrents, commandpost
 
     # 旧版custom_task 实验数据还是从表格中读取
     def custom_task_aux(self, config, args):

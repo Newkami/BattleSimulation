@@ -13,9 +13,9 @@ def get_rl_common_args():
     # parser.add_argument('--step_mul', type=int, default=1, help='how many steps to make an action')
     parser.add_argument('--replay_dir', type=str, default='', help='absolute path to save the replay')
     # /home/zz/PycharmProjects/BattleSimulation/replay
-    parser.add_argument('--reward_death_value', type=int, default=30, help='击毁奖励值')
+    parser.add_argument('--reward_death_value', type=int, default=40, help='击毁敌军目标的基础奖励值')
     parser.add_argument('--destroyed_value', type=int, default=20, help='被击毁惩罚')
-    parser.add_argument('--reward_win', type=int, default=100, help='获胜奖励')
+    parser.add_argument('--reward_win', type=int, default=200, help='获胜奖励')
     parser.add_argument('--episode_limit', type=int, default=90, help='回合限制')
     parser.add_argument('--n_agents', type=int, default=30, help='nums of agents')
     # The alternative algorithms are vdn, coma, central_v, qmix, qtran_base,
@@ -33,7 +33,7 @@ def get_rl_common_args():
     parser.add_argument('--model_dir', type=str, default='./model', help='model directory of the policy')
     parser.add_argument('--result_dir', type=str, default='./result', help='result directory of the policy')
 
-    parser.add_argument('--load_model', type=bool, default=True, help='whether to load the pretrained model')
+    parser.add_argument('--load_model', type=bool, default=False, help='whether to load the pretrained model')
     parser.add_argument('--load_model_num', type=int, default=4, help='使用第几次的训练model')
     parser.add_argument('--evaluate', type=bool, default=False, help='whether to evaluate the model')
     parser.add_argument('--cuda', type=bool, default=True, help='whether to use the GPU')

@@ -22,8 +22,11 @@ class TestBattleEnv(unittest.TestCase):
 
     def test_reset(self):
         env.reset()
-        for k, v in env.target_map.items():
-            print(v)
+        # for k, v in env.target_map.items():
+        #     print(v)
+        print(args)
+        env_info = env.get_env_info()
+        print(env_info)
 
     def test_attacked(self):
         env.reset()

@@ -46,6 +46,10 @@ class Direction(enum.IntEnum):
     BACK = 1
     LEFT = 2
     RIGHT = 3
+    UPPERLEFT = 4
+    UPPERRIGHT = 5
+    LOWERLEFT = 6
+    LOWERRIGHT = 7
 
 
 class Multirotor:
@@ -75,8 +79,16 @@ class Multirotor:
             act_x, act_y = self.move_back_aux(g_map.shape[0], g_map.shape[1])
         elif action == 3:  # 向左移动
             act_x, act_y = self.move_left_aux(g_map.shape[0], g_map.shape[1])
-        else:  # 向右移动
+        elif action == 4:  # 向右移动
             act_x, act_y = self.move_right_aux(g_map.shape[0], g_map.shape[1])
+        elif action == 5:  # 向右移动
+            act_x, act_y = self.move_upperleft_aux(g_map.shape[0], g_map.shape[1])
+        elif action == 6:  # 向右移动
+            act_x, act_y = self.move_upperright_aux(g_map.shape[0], g_map.shape[1])
+        elif action == 7:  # 向右移动
+            act_x, act_y = self.move_lowerleft_aux(g_map.shape[0], g_map.shape[1])
+        elif action == 8:  # 向右移动
+            act_x, act_y = self.move_lowerright_aux(g_map.shape[0], g_map.shape[1])
 
         if act_x == self.x_cord and act_y == self.y_cord:  # 说明没有合适的范围可供移动
             return
@@ -160,6 +172,42 @@ class Multirotor:
             if utils.IsInMap(intend_pos_x, intend_pos_y, mapX, mapY):
                 return intend_pos_x, intend_pos_y
 
+    def move_upperleft_aux(self, mapX, mapY):
+        for i in range(self.steps, -1, -1):  # 若不在范围内 则缩小移动的步数
+            if i == 0:
+                return self.x_cord, self.y_cord
+            intend_pos_x = self.x_cord - i
+            intend_pos_y = self.y_cord + i
+            if utils.IsInMap(intend_pos_x, intend_pos_y, mapX, mapY):
+                return intend_pos_x, intend_pos_y
+
+    def move_upperright_aux(self, mapX, mapY):
+        for i in range(self.steps, -1, -1):  # 若不在范围内 则缩小移动的步数
+            if i == 0:
+                return self.x_cord, self.y_cord
+            intend_pos_x = self.x_cord + i
+            intend_pos_y = self.y_cord + i
+            if utils.IsInMap(intend_pos_x, intend_pos_y, mapX, mapY):
+                return intend_pos_x, intend_pos_y
+
+    def move_lowerleft_aux(self, mapX, mapY):
+        for i in range(self.steps, -1, -1):  # 若不在范围内 则缩小移动的步数
+            if i == 0:
+                return self.x_cord, self.y_cord
+            intend_pos_x = self.x_cord - i
+            intend_pos_y = self.y_cord - i
+            if utils.IsInMap(intend_pos_x, intend_pos_y, mapX, mapY):
+                return intend_pos_x, intend_pos_y
+
+    def move_lowerright_aux(self, mapX, mapY):
+        for i in range(self.steps, -1, -1):  # 若不在范围内 则缩小移动的步数
+            if i == 0:
+                return self.x_cord, self.y_cord
+            intend_pos_x = self.x_cord + i
+            intend_pos_y = self.y_cord - i
+            if utils.IsInMap(intend_pos_x, intend_pos_y, mapX, mapY):
+                return intend_pos_x, intend_pos_y
+
     def get_sight_range(self):
         return self.sight_range
 
@@ -239,7 +287,7 @@ class BattleEnv(MultiAgentEnv):
         self.n_antiAirturrent = args.n_antiAirturrent
         self.n_commandpost = args.n_commandpost
         self.n_enemies = self.n_jammer + self.n_radar + self.n_missilevehicle + self.n_antiAirturrent + self.n_commandpost
-        self.n_actions = 1 + 4 + self.n_enemies  # 动作空间大小
+        self.n_actions = 1 + 8 + self.n_enemies  # 动作空间大小
         self.min_destroy_cp_num = args.min_destroy_cp_num  # 击毁指挥所所需的最少无人机数量
         self.move_reward_coef = args.move_reward_coef  # 移动产生的奖励系数
         self.attack_reward_coef = args.attack_reward_coef  # 攻击产生的奖励系数
@@ -321,6 +369,9 @@ class BattleEnv(MultiAgentEnv):
             self.target_map[v.battle_id] = v
         self.target_map[self.commandpost.battle_id] = self.commandpost
 
+        # for k, v in self.target_map.items():
+        #     print(v)
+
     """初始化无人机集群信息"""
 
     def initializeMultirotors(self, mapX):
@@ -383,7 +434,7 @@ class BattleEnv(MultiAgentEnv):
                 assert agent.isAlive == 0, "no-op is available only for dead uav!"
                 rewards.append(reward)
                 continue
-            elif action in [1, 2, 3, 4]:  # 朝前后左右移动
+            elif action in [1, 2, 3, 4, 5, 6, 7, 8]:  # 朝前后左右移动
                 x_last, y_last = agent.x_cord, agent.y_cord
                 agent.execute_move(action, self.g_map)
                 reward = self.get_move_reward(x_last, y_last, agent.x_cord, agent.y_cord, self.commandpost)
@@ -419,6 +470,8 @@ class BattleEnv(MultiAgentEnv):
         if win_tag:
             fi_reward += self.reward_win
             logger.info(f"取得胜利，所花费的回合数{self._episode_steps}")
+        # elif self._episode_steps < self.episode_limit and not win_tag:
+        #     logger.warning(f"战斗失败，所花费的回合数{self._episode_steps}")
         # fi_reward -= 5  # 每经过一个回合奖励值降低
         info = {"battle_won": win_tag}
 
@@ -451,7 +504,7 @@ class BattleEnv(MultiAgentEnv):
         return self.multirotors[id]
 
     def get_total_actions(self):
-        return 5 + self.n_enemies
+        return 9 + self.n_enemies
 
     def get_total_actions_list(self):
         """
@@ -465,14 +518,14 @@ class BattleEnv(MultiAgentEnv):
 
             return: n_actions
         """
-        total_actions = [0, 1, 2, 3, 4]
+        total_actions = [0, 1, 2, 3, 4, 5, 6, 7, 8]
         for i in range(self.n_enemies):
-            total_actions.append(5 + i)
+            total_actions.append(9 + i)
         # return self.n_enemies + 5
         return total_actions
 
     def get_target_by_act(self, act):
-        act = act - 4
+        act = act - 8
         return self.target_map[act]
 
     def get_base_damage(self, target):
@@ -525,6 +578,7 @@ class BattleEnv(MultiAgentEnv):
         """
         loss = -utils.distance_between_objects_in_2d((x_last, y_last), (x, y))
         loss = round(loss / 2, 2)
+        # loss = 0
         dis_last = utils.distance_between_objects_in_2d((x_last, y_last), (target.x_cord, target.y_cord))
         dis_now = utils.distance_between_objects_in_2d((x, y), (target.x_cord, target.y_cord))
         reward = round(dis_last - dis_now, 2) * self.move_reward_coef
@@ -590,13 +644,21 @@ class BattleEnv(MultiAgentEnv):
 
     def can_move(self, uav, direction):
         if direction == Direction.FORWARD:
-            return uav.y_cord != self.args.mapY
+            return uav.y_cord != self.args.mapY - 1
         elif direction == Direction.BACK:
             return uav.y_cord != 0
         elif direction == Direction.LEFT:
             return uav.x_cord != 0
-        else:
-            return uav.x_cord != self.args.mapX
+        elif direction == Direction.RIGHT:
+            return uav.x_cord != self.args.mapX - 1
+        elif direction == Direction.UPPERLEFT:
+            return uav.x_cord != 0 and uav.y_cord != self.args.mapY - 1
+        elif direction == Direction.UPPERRIGHT:
+            return uav.x_cord != self.args.mapX - 1 and uav.y_cord != self.args.mapY - 1
+        elif direction == Direction.LOWERLEFT:
+            return uav.x_cord != self.args.mapX - 1 and uav.y_cord != 0
+        elif direction == Direction.LOWERRIGHT:
+            return uav.x_cord != 0 and uav.y_cord != 0
 
     def get_avail_agent_actions(self, agent_id):
         """
@@ -614,6 +676,14 @@ class BattleEnv(MultiAgentEnv):
                 avail_actions[3] = 1
             if self.can_move(agent, Direction.RIGHT):
                 avail_actions[4] = 1
+            if self.can_move(agent, Direction.UPPERLEFT):
+                avail_actions[5] = 1
+            if self.can_move(agent, Direction.UPPERRIGHT):
+                avail_actions[6] = 1
+            if self.can_move(agent, Direction.LOWERLEFT):
+                avail_actions[7] = 1
+            if self.can_move(agent, Direction.LOWERRIGHT):
+                avail_actions[8] = 1
             sight_range = agent.get_sight_range()
             target_items = self.target_map.items()
             for k, v in target_items:
@@ -621,11 +691,11 @@ class BattleEnv(MultiAgentEnv):
                     dis = utils.distance_between_objects_in_2d(agent, v)
                     if v.target_type == Enemy.JAMMER:
                         # for jammer ,the target must be takingoff state so that it can be atk
-                        if v.isTakingoff and dis <= sight_range + 1:
-                            avail_actions[4 + v.battle_id] = 1
+                        if v.isTakingoff and dis <= sight_range + 2:
+                            avail_actions[8 + v.battle_id] = 1
                     else:
                         if dis <= sight_range + 1:
-                            avail_actions[4 + v.battle_id] = 1
+                            avail_actions[8 + v.battle_id] = 1
             return avail_actions
         else:
             return [1] + [0] * (self.n_actions - 1)  # avail uav for dead uav

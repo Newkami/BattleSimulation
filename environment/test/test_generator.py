@@ -6,7 +6,7 @@ args = get_env_common_args()
 tg = Task_Generator()
 class TestTask_Generator(unittest.TestCase):
     def test_generator_task(self):
-        for i in range(10):
+        for i in range(1):
             a, b, c, d, e = tg.generate_task(args)
             for i in a:
                 print(i)

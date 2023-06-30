@@ -173,8 +173,8 @@ class Task_Generator:
         init_x = config['init_commandpost_x']
         init_y = config['init_commandpost_y']
         commandpost = CommandPost("CommandPost", init_x, init_y, total_num + 1, args)
-        # 获取5圈的可选范围 获取以初始点为原点的二 三 四象限的所有点
-        options = utils.get_MatrixWithNoObjs(init_x, init_y, np.zeros((args.mapX, args.mapY)), 10)
+
+        options = utils.get_defend_pos_list((init_x, init_y), 30, total_num, args.mapX, args.mapY)
         # options = utils.get_quadrantsPointwithNoObjs(init_x, init_y, np.zeros((args.mapX, args.mapY), dtype=int), 20)
         # todo 完成只选择该点范围内 左边和下方的点 并不选择该目标点后方的点
         assert len(options) >= total_num, "you betther check out the init_commandpost position or the num of target in config.py ,because the rest empty points are not enough\

@@ -8,13 +8,13 @@ TASK_CONFIG = {
     "total_num": 9,  # 保证下面的设置数量要和total_num相等 不然会发生aseert错误
     "jammers": {
         "easy": 1,
-        "medium": 0,
-        "hard": 1
+        "medium": 1,
+        "hard": 0
     },
     "missile_vehicles": {
         "easy": 1,
-        "medium": 0,
-        "hard": 1
+        "medium": 1,
+        "hard": 0
     },
     "radars": {
         "easy": 1,
@@ -27,5 +27,5 @@ TASK_CONFIG = {
         "hard": 1
     },
     "init_commandpost_x": 40,
-    "init_commandpost_y": 40,
+    "init_commandpost_y": 40
 }

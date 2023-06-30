@@ -30,11 +30,11 @@ class TestBattleEnv(unittest.TestCase):
 
     def test_attacked(self):
         env.reset()
-        target = env.get_target_by_act(2)
+        target = env.get_target_by_act(5)
         print(target)
         target.BeAttacked(80, env.g_map)
 
-        visualizeMap(env.g_map)
+        visualizeMapIn2d(env.g_map)
 
     def test_get_agent_by_id(self):
         env.reset()
@@ -82,18 +82,21 @@ class TestBattleEnv(unittest.TestCase):
     def test_get_avail_action(self):
         env.reset()
         x, y = env.commandpost.x_cord, env.commandpost.y_cord
-        env.multirotors[0].x_cord = x-1
-        env.multirotors[0].y_cord = y-1
+        env.multirotors[0].x_cord = 4
+        env.multirotors[0].y_cord = 0
+        env.missile_vehicles[0].x_cord = 1
+        env.missile_vehicles[0].y_cord = 0
         print(env.get_avail_agent_actions(0))
+
 
 
 class TestMultiRotor(unittest.TestCase):
     def test_execute_move(self):
-        map = -np.ones((10, 20))
+        map = np.zeros((10, 20))
         uav_args = get_multirotor_args()
+        uav_args.sight_range = 3
         uav = Multirotor(uav_args, 1)
         uav.x_cord = 1
         uav.y_cord = 3
-        uav.execute_move(4, map)
-
-
+        uav.execute_move(8, map)
+        print(uav.x_cord, uav.y_cord)

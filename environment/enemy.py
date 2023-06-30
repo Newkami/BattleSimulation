@@ -49,8 +49,10 @@ class Jammer():
         self.jm_attack_range = args.jm_attack_range
 
     def __str__(self):
-        return '干扰机：{0} 所在位置：x:{1}  y:{2} 当前耐久值：{3} 索引id：{4}'.format(self.id, self.x_cord, self.y_cord,
-                                                                                   self.HP, self.battle_id)
+        return '干扰机：{0} 所在位置：x:{1}  y:{2} 当前耐久值：{3} 索引id：{4} 攻击范围{5}'.format(self.id, self.x_cord,
+                                                                                               self.y_cord,
+                                                                                               self.HP, self.battle_id,
+                                                                                               self.jm_attack_range)
 
     def set_current_hp(self, val):
         self.HP = val
@@ -147,8 +149,8 @@ class MissileVehicle:
         self.isAlive = True  # 存活状态
 
     def __str__(self):
-        return '导弹车_id:{0} 所在位置：x:{1}  y:{2} 当前耐久值：{3} 当前打击能力：{4}架 索引id：{5}'. \
-            format(self.id, self.x_cord, self.y_cord, self.HP, self.strike_ability, self.battle_id)
+        return '导弹车_id:{0} 所在位置：x:{1}  y:{2} 当前耐久值：{3} 当前打击能力：{4}架 索引id：{5} 攻击范围{6}'. \
+            format(self.id, self.x_cord, self.y_cord, self.HP, self.strike_ability, self.battle_id, self.attack_range)
 
     def set_current_hp(self, val):
         self.HP = val

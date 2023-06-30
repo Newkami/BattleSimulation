@@ -1,5 +1,6 @@
 import math
 import os
+import random
 
 import matplotlib
 
@@ -253,3 +254,116 @@ def get_quadrantsPointwithNoObjs(x, y, map, n_circle=1) -> list:
         if IsInMap(option[0], option[1], map.shape[0], map.shape[1]) and map[option[0]][option[1]] == 0:
             result.append(option)
     return result
+
+
+def polar2XY(command, r, theta):
+    """
+    极坐标系转化为平面直角坐标系
+    输入:
+        command: 指挥所中心坐标[x,y]
+        r: 半径
+        theta: 角度
+    输出:
+        [x,y]: 平面直角坐标系
+
+    """
+    theta = theta * (np.pi / 180)
+    x = command[0] + r * np.cos(theta)
+    y = command[1] + r * np.sin(theta)
+    return (int(x), int(y))
+
+
+def generate_layer_node(node_num, layer_num):
+    """
+    生成求和数量为固定值,固定层数的节点列表
+    输入:
+        node_num: 节点总数
+        layer_num: 防御层数
+    输出:
+        defense_layer_node: 每一层的节点数量
+    """
+    # 为了保证每一层都有防御节点,首先将每一层的节点数量初始化为1
+    defense_layer_node = [1 for _ in range(layer_num)]
+    # 计算初始化分配完成之后所剩下的节点总数
+    remain_node = node_num - sum(defense_layer_node)
+    # 计算均匀分配情况下,每一层可以得到多少的节点
+    average_node = int(remain_node / layer_num)
+    for i in range(layer_num - 1):
+        # 计算当前层被分配的节点数量
+        distrib = random.randint(average_node - 1, average_node)
+        # 将节点数量添加其中
+        defense_layer_node[i] += distrib
+        # 计算剩余的节点数量
+        remain_node -= distrib
+    defense_layer_node[-1] += remain_node
+
+    return defense_layer_node
+
+
+def get_defend_pos_list(command, n, actual_num, mapX, mapY):
+    """   第1步,参数配置   """
+    # 防御层数
+    defense_layer = 2
+    # 层间的距离
+    layer2layer_radius_min = 5
+    layer2layer_radius_max = 6
+
+    """   第2步,生成节点位置[X,Y]   """
+    # 每一层的防御点数量
+    defense_layer_node = generate_layer_node(n, defense_layer)
+    # print(defense_layer_node)
+    # 记录每一层所在的半径
+    defense_layer_radius = []
+    for i in range(defense_layer):
+        # 层间的间隔不同
+        layer2layer_radius = random.randint(layer2layer_radius_min, layer2layer_radius_max)
+        if i == 0:
+            defense_layer_radius.append(layer2layer_radius)
+        else:
+            radius = defense_layer_radius[-1] + layer2layer_radius
+            defense_layer_radius.append(radius)
+
+    # 防御点均匀分布,但是初始的角度不同
+    defense_layer_theta = []
+    for i in range(defense_layer):
+        init_theta = random.randint(0, 90)
+        defense_layer_theta.append(init_theta)
+
+    defense_list = []
+    # 遍历每一层
+    for i in range(defense_layer):
+        # 随机生成半径
+        init_r = defense_layer_radius[i]
+        # 初始的角度
+        init_theta = defense_layer_theta[i]
+        # 遍历每一层的作战对象
+        for j in range(defense_layer_node[i]):
+            """   生成防御点角度值   """
+            # 生成单位角度
+            unit_angle = int(360 / defense_layer_node[i])
+            # 角度扰动
+            float_angle = random.randint(-10, 10)
+            # 生成角度
+            theta = init_theta + j * unit_angle + float_angle
+            """   生成防御点半径   """
+            # 半径扰动
+            float_radius = random.randint(-1, 1)
+            # 生成半径
+            r = init_r + float_radius
+            # 生成防御点
+            defense_pos = polar2XY(command, r, theta)
+            defense_list.append(defense_pos)
+    real_defend_list = []
+    for i, point in enumerate(defense_list):
+        if IsInMap(point[0], point[1], mapX, mapY):
+            real_defend_list.append(point)
+    # defense_list = np.array(defense_list)
+
+    assert len(real_defend_list)>= actual_num, "合法的采样点数目小于实际需要的点个数"
+    # plt.plot(defense_list[:, 0], defense_list[:, 1], "b*", label="防御点")
+    # plt.plot(command[0], command[1], "r^", label="指挥所")
+    # plt.xlim(0, 50)
+    # plt.ylim(0, 50)
+    # plt.legend()
+    # plt.show()
+    return random.sample(real_defend_list, actual_num)

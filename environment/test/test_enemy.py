@@ -40,5 +40,12 @@ class TestJammer(unittest.TestCase):
 class TestRadar(unittest.TestCase):
     def test_be_attacked(self):
         for i in env.radars:
-            i.BeAttacked(60, env.g_map)
+            i.BeAttacked(100, env.g_map)
+        visualizeMapIn2d(env.g_map)
+
+
+class TestMissile_Vehicle(unittest.TestCase):
+    def test_be_attacked(self):
+        for i in env.missile_vehicles:
+            i.BeAttacked(100, env.g_map)
         visualizeMapIn2d(env.g_map)

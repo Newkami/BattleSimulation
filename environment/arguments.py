@@ -5,9 +5,9 @@ import argparse
 def get_env_common_args():
     parser = argparse.ArgumentParser(description="the necessrary params of environments")
 
-    parser.add_argument('--difficulty', type=int, default=1, help='任务难度')  # 0 Easy 1 Medium 2 Hard 3 custom
+    parser.add_argument('--difficulty', type=int, default=3, help='任务难度')  # 0 Easy 1 Medium 2 Hard 3 custom
     # fixme 如果在custom难度下 修改了config.py下的敌军数量时，还要改变此处参数的arguments.py 否则会出现环境初始化错误
-    # fixme 这是由于环境的构造函数会先读取这个值，但是环境的私有变量是在reset后才更新的
+    # 这是由于环境的构造函数会先读取这个值，但是环境的私有变量是在reset后才更新的
     parser.add_argument('--n_jammer', type=int, default=2, help='干扰机数量')
     parser.add_argument('--n_missilevehicle', type=int, default=2, help='导弹车数量')
     parser.add_argument('--n_radar', type=int, default=2, help='雷达数量')
@@ -40,7 +40,7 @@ def get_env_common_args():
 
     parser.add_argument('--plot', type=bool, default=True)  # 是否开启plot DEBUG用 该参数没有用到
 
-    parser.add_argument('--damage_to_jammer', type=int, default=30, help='无人机对干扰机的百分比伤害')
+    parser.add_argument('--damage_to_jammer', type=int, default=50, help='无人机对干扰机的百分比伤害')
     parser.add_argument('--damage_to_mv', type=int, default=40, help='无人机对导弹车的百分比伤害')
     parser.add_argument('--damage_to_rd', type=int, default=30, help='无人机对雷达的百分比伤害')
     parser.add_argument('--damage_to_aat', type=int, default=40, help='无人机对防空炮的百分比伤害')
@@ -53,7 +53,7 @@ def get_env_common_args():
 
     parser.add_argument('--exceed_episode_limit_reward', type=int, default=10, help='超时惩罚')
 
-    parser.add_argument('--is_plot', type=bool, default=False, help='是否画图')
+    parser.add_argument('--is_plot', type=bool, default=True, help='是否画图')
     parser.add_argument('--is_debug', type=bool, default=False, help='是否输出日志')
     args = parser.parse_args()
     return args

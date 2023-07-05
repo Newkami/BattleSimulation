@@ -8,9 +8,9 @@ def get_env_common_args():
     parser.add_argument('--difficulty', type=int, default=3, help='任务难度')  # 0 Easy 1 Medium 2 Hard 3 custom
     # fixme 如果在custom难度下 修改了config.py下的敌军数量时，还要改变此处参数的arguments.py 否则会出现环境初始化错误
     # 这是由于环境的构造函数会先读取这个值，但是环境的私有变量是在reset后才更新的
-    parser.add_argument('--n_jammer', type=int, default=2, help='干扰机数量')
+    parser.add_argument('--n_jammer', type=int, default=3, help='干扰机数量')
     parser.add_argument('--n_missilevehicle', type=int, default=2, help='导弹车数量')
-    parser.add_argument('--n_radar', type=int, default=2, help='雷达数量')
+    parser.add_argument('--n_radar', type=int, default=3, help='雷达数量')
     parser.add_argument('--n_antiAirturrent', type=int, default=3, help='防空炮数量')
     parser.add_argument('--n_commandpost', type=int, default=1, help='指挥所数量')
 

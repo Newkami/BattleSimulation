@@ -5,9 +5,9 @@ DATA_PATH = os.path.join(ROOT_PATH, 'data')
 LOG_PATH = os.path.join(ROOT_PATH, 'logs')
 
 TASK_CONFIG = {
-    "total_num": 9,  # 保证下面的设置数量要和total_num相等 不然会发生aseert错误
+    "total_num": 11,  # 保证下面的设置数量要和total_num相等 不然会发生aseert错误
     "jammers": {
-        "easy": 1,
+        "easy": 2,
         "medium": 1,
         "hard": 0
     },
@@ -18,7 +18,7 @@ TASK_CONFIG = {
     },
     "radars": {
         "easy": 1,
-        "medium": 0,
+        "medium": 1,
         "hard": 1
     },
     "antiairturrents": {

@@ -16,7 +16,7 @@ def get_rl_common_args():
     parser.add_argument('--reward_death_value', type=int, default=100, help='击毁敌军目标的基础奖励值')
     parser.add_argument('--destroyed_value', type=int, default=20, help='被击毁惩罚')
     parser.add_argument('--reward_win', type=int, default=300, help='获胜奖励')
-    parser.add_argument('--episode_limit', type=int, default=150, help='回合限制')
+    parser.add_argument('--episode_limit', type=int, default=120, help='回合限制')
     parser.add_argument('--n_agents', type=int, default=40, help='nums of agents')
     # The alternative algorithms are vdn, coma, central_v, qmix, qtran_base,
     # qtran_alt, reinforce, coma+commnet, central_v+commnet, reinforce+commnet，
@@ -35,7 +35,7 @@ def get_rl_common_args():
     parser.add_argument('--result_dir', type=str, default='./result', help='result directory of the policy')
 
     parser.add_argument('--load_model', type=bool, default=False, help='whether to load the pretrained model')
-    parser.add_argument('--load_model_num', type=int, default=2, help='使用第几次的训练model')
+    parser.add_argument('--load_model_num', type=int, default=3, help='使用第几次的训练model')
     parser.add_argument('--evaluate', type=bool, default=False, help='whether to evaluate the model')
     parser.add_argument('--cuda', type=bool, default=False, help='whether to use the GPU')
 

@@ -303,7 +303,7 @@ def generate_layer_node(node_num, layer_num):
 def get_defend_pos_list(command, n, actual_num, mapX, mapY):
     """   第1步,参数配置   """
     # 防御层数
-    defense_layer = 2
+    defense_layer = 3
     # 层间的距离
     layer2layer_radius_min = 5
     layer2layer_radius_max = 6

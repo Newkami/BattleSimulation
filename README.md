@@ -23,7 +23,7 @@
 **BSPlineNew** C++实现的RiskMap和B样条曲线
 
 policy netword agent为具体MARL算法实现
-
+`MARL算法参考[starry-sky6688/MARL-Algorithm](https://github.com/starry-sky6688/MARL-Algorithms)，致谢大佬o.O。`
 
 ### 环境配置
 
@@ -120,17 +120,17 @@ common/arguments.py 中 `is_plot` 设置为True即可打开训练过程中的画
 而`console_handler.setLevel(logging.INFO)`将控制台处理器的日志级别设置为INFO级别，意味着只有INFO级别及以上的日志消息会被发送到控制台处理器，而DEBUG级别的日志消息将被忽略。
 
 
-#BSplineNew#
-##环境搭建##
+# BSplineNew
+## 环境搭建
 用到了外部库jsoncpp、eigen3、画图模块用到了matplotlibcpp(该库只是通过cpp调用matplotlib 所以要保证环境中安装了numpy python3)
 ```bash
 sudo apt install libjsoncpp-dev
 sudo apt install libeigen3-dev
 ```
-###matplotlibcpp###
-配置过程比较麻烦====
+### matplotlibcpp
+`参考[matplotlibcpp](https://github.com/lava/matplotlib-cpp)，致谢大佬o.O。`
 
-##quickstart##
+## quickstart
 ```bash
 cd BSplineNew
 mkdir build
